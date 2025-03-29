@@ -1,10 +1,25 @@
-import { getConfig } from "./services/storage";
-
 // State management
 let isTranslating = false;
 let isExtensionDisabled = false;
 let selectedText = "";
 let translationPopup: HTMLDivElement | null = null;
+
+// Log that the content script has loaded
+console.log("AI Translator Pro: Content script loaded");
+
+// Function to notify the background script that the content script is ready
+const notifyBackgroundScriptReady = () => {
+  chrome.runtime.sendMessage({ type: "CONTENT_SCRIPT_READY" }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.warn(
+        "Error notifying background script:",
+        chrome.runtime.lastError
+      );
+      return;
+    }
+    console.log("Background script notified:", response);
+  });
+};
 
 // Initialize the content script
 const init = async () => {
@@ -37,6 +52,11 @@ const init = async () => {
 
       if (config && config.disabledSites) {
         isExtensionDisabled = config.disabledSites.includes(hostname);
+        console.log(
+          `Extension ${
+            isExtensionDisabled ? "disabled" : "enabled"
+          } for site: ${hostname}`
+        );
       }
     });
 
@@ -72,6 +92,9 @@ const init = async () => {
       return true; // Keep the message channel open for async responses
     });
 
+    // Notify the background script that we're ready
+    notifyBackgroundScriptReady();
+
     console.log("AI Translator Pro content script initialized");
   } catch (error) {
     console.error("Error initializing content script:", error);
@@ -89,36 +112,53 @@ const handleTextSelection = async () => {
     selectedText = text;
 
     // Check if auto-translate is enabled
-    const config = await getConfig();
-
-    if (config.autoTranslate && config.apiKey) {
-      isTranslating = true;
-      showLoadingPopup();
-
-      try {
-        // Send message to background script to translate
-        chrome.runtime.sendMessage(
-          {
-            type: "TRANSLATE_SELECTION",
-            text,
-            sourceLanguage: config.sourceLanguage,
-            targetLanguage: config.targetLanguage,
-          },
-          (response) => {
-            isTranslating = false;
-
-            if (response.error) {
-              showError(response.error);
-            } else {
-              showTranslation(response.translatedText, text);
-            }
-          }
-        );
-      } catch (error) {
-        isTranslating = false;
-        showError(error instanceof Error ? error.message : "Unknown error");
+    chrome.runtime.sendMessage({ type: "GET_CONFIG" }, (config) => {
+      if (chrome.runtime.lastError) {
+        console.warn("Error getting config:", chrome.runtime.lastError);
+        return;
       }
-    }
+
+      if (config && config.autoTranslate && config.apiKey) {
+        isTranslating = true;
+        showLoadingPopup();
+
+        try {
+          // Send message to background script to translate
+          chrome.runtime.sendMessage(
+            {
+              type: "TRANSLATE_SELECTION",
+              text,
+              sourceLanguage: config.sourceLanguage,
+              targetLanguage: config.targetLanguage,
+            },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                console.warn(
+                  "Error sending translate request:",
+                  chrome.runtime.lastError
+                );
+                showError(
+                  "Failed to communicate with the extension. Please try again."
+                );
+                isTranslating = false;
+                return;
+              }
+
+              isTranslating = false;
+
+              if (response.error) {
+                showError(response.error);
+              } else {
+                showTranslation(response.translatedText, text);
+              }
+            }
+          );
+        } catch (error) {
+          isTranslating = false;
+          showError(error instanceof Error ? error.message : "Unknown error");
+        }
+      }
+    });
   } else if (!text && translationPopup) {
     // Remove translation popup when selection is cleared
     translationPopup.remove();
@@ -375,5 +415,21 @@ const showError = (errorMessage: string) => {
   popup.appendChild(closeButton);
 };
 
-// Initialize the content script
-init();
+// Initialize the content script when the DOM is fully loaded
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+
+// Make sure the content script is initialized even if DOMContentLoaded has already fired
+setTimeout(init, 500);
+
+// Export a function to detect if the content script is loaded
+window.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "AI_TRANSLATOR_CHECK") {
+    window.postMessage({ type: "AI_TRANSLATOR_RESPONSE", loaded: true }, "*");
+  }
+});
+
+console.log("AI Translator Pro: Content script execution completed");

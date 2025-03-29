@@ -43,6 +43,7 @@ export enum MessageType {
   UPDATE_CONFIG = "UPDATE_CONFIG",
   GET_CONFIG = "GET_CONFIG",
   PING = "PING",
+  CONTENT_SCRIPT_READY = "CONTENT_SCRIPT_READY",
 }
 
 // Base message interface
@@ -79,4 +80,9 @@ export interface UpdateConfigMessage extends Message {
 // Get config message
 export interface GetConfigMessage extends Message {
   type: MessageType.GET_CONFIG;
+}
+
+// Content script ready message
+export interface ContentScriptReadyMessage extends Message {
+  type: MessageType.CONTENT_SCRIPT_READY;
 }
