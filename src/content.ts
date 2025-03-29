@@ -32,7 +32,7 @@ const injectMicrophonePermissionIframe = async () => {
   iframe.setAttribute("hidden", "hidden");
   iframe.setAttribute("id", "permissionsIFrame");
   iframe.setAttribute("allow", "microphone");
-  iframe.src = "./chrome-extension/src/pages/permission/ndex.html";
+  iframe.src = chrome.runtime.getURL("src/pages/permission/index.html");
   document.body.appendChild(iframe);
 
   // Listen for messages from the iframe
@@ -339,7 +339,7 @@ const addStyles = () => {
       }
       
       .ai-translator-btn-primary {
-        background-color: #3b82f6;
+        background-color: #4f46e5;
         color: white;
       }
       
@@ -377,7 +377,7 @@ const showLoadingPopup = () => {
 
   const logoDiv = document.createElement("div");
   const logoImg = document.createElement("img");
-  logoImg.src = chrome.runtime.getURL("32.png");
+  logoImg.src = chrome.runtime.getURL("public/32.png");
   logoImg.width = 20;
   logoImg.height = 20;
   logoDiv.appendChild(logoImg);
@@ -386,7 +386,7 @@ const showLoadingPopup = () => {
   titleDiv.textContent = "AI Translator Pro";
   titleDiv.style.marginLeft = "8px";
   titleDiv.style.fontWeight = "600";
-  titleDiv.style.color = "#3b82f6";
+  titleDiv.style.color = "#4f46e5";
 
   headerDiv.appendChild(logoDiv);
   headerDiv.appendChild(titleDiv);
@@ -416,7 +416,7 @@ const showLoadingPopup = () => {
   spinner.style.height = "14px";
   spinner.style.borderRadius = "50%";
   spinner.style.border = "2px solid #e5e7eb";
-  spinner.style.borderTopColor = "#3b82f6";
+  spinner.style.borderTopColor = "#4f46e5";
   spinner.style.animation = "ai-translator-spin 0.8s linear infinite";
   spinner.style.marginRight = "8px";
 
@@ -463,7 +463,7 @@ const showTranslation = (translatedText: string, originalText: string) => {
 
   const logoDiv = document.createElement("div");
   const logoImg = document.createElement("img");
-  logoImg.src = chrome.runtime.getURL("32.png");
+  logoImg.src = chrome.runtime.getURL("public/32.png");
   logoImg.width = 20;
   logoImg.height = 20;
   logoDiv.appendChild(logoImg);
@@ -472,7 +472,7 @@ const showTranslation = (translatedText: string, originalText: string) => {
   titleDiv.textContent = "AI Translator Pro";
   titleDiv.style.marginLeft = "8px";
   titleDiv.style.fontWeight = "600";
-  titleDiv.style.color = "#3b82f6";
+  titleDiv.style.color = "#4f46e5";
 
   headerDiv.appendChild(logoDiv);
   headerDiv.appendChild(titleDiv);
@@ -589,7 +589,7 @@ const showError = (errorMessage: string) => {
 
   const logoDiv = document.createElement("div");
   const logoImg = document.createElement("img");
-  logoImg.src = chrome.runtime.getURL("32.png");
+  logoImg.src = chrome.runtime.getURL("public/32.png");
   logoImg.width = 20;
   logoImg.height = 20;
   logoDiv.appendChild(logoImg);
@@ -598,7 +598,7 @@ const showError = (errorMessage: string) => {
   titleDiv.textContent = "AI Translator Pro";
   titleDiv.style.marginLeft = "8px";
   titleDiv.style.fontWeight = "600";
-  titleDiv.style.color = "#3b82f6";
+  titleDiv.style.color = "#4f46e5";
 
   headerDiv.appendChild(logoDiv);
   headerDiv.appendChild(titleDiv);
