@@ -8,6 +8,18 @@ export type ExtensionConfig = {
   targetLanguage: string;
   autoTranslate: boolean;
   enableAnimations: boolean;
+  history: HistoryItem[];
+};
+
+// History item for translations and transcriptions
+export type HistoryItem = {
+  id: string;
+  type: "translation" | "transcription";
+  originalText: string;
+  translatedText: string;
+  sourceLanguage: string;
+  targetLanguage: string;
+  timestamp: number;
 };
 
 // Language supported by the extension
@@ -30,6 +42,7 @@ export enum MessageType {
   GET_SITE_STATUS = "GET_SITE_STATUS",
   UPDATE_CONFIG = "UPDATE_CONFIG",
   GET_CONFIG = "GET_CONFIG",
+  PING = "PING",
 }
 
 // Base message interface

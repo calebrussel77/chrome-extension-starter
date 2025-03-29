@@ -1,17 +1,25 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Button from "../../components/Button";
+import HistoryTab from "../../components/HistoryTab";
 import Select from "../../components/Select";
 import Toggle from "../../components/Toggle";
 import { LANGUAGES } from "../../languages";
 import { speechToText, translateText } from "../../services/api";
-import { getConfig, updateConfig } from "../../services/storage";
-import { MessageType } from "../../types";
+import {
+  addToHistory,
+  clearHistory,
+  deleteHistoryItem,
+  getConfig,
+  getHistory,
+  updateConfig,
+} from "../../services/storage";
+import { HistoryItem, MessageType } from "../../types";
 
 import "../../chrome-extension/global.css";
 
-const Popup = () => {
+const Popup: React.FC = () => {
   // State
   const [apiKey, setApiKey] = useState("");
   const [sourceLanguage, setSourceLanguage] = useState("auto");
@@ -23,15 +31,16 @@ const Popup = () => {
   const [error, setError] = useState("");
   const [isAutoTranslate, setIsAutoTranslate] = useState(true);
   const [enableAnimations, setEnableAnimations] = useState(true);
-  const [activeTab, setActiveTab] = useState<"translate" | "voice">(
+  const [activeTab, setActiveTab] = useState<"translate" | "voice" | "history">(
     "translate"
   );
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
   // Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // Load config on mount
+  // Load config and history on mount
   useEffect(() => {
     const loadConfig = async () => {
       try {
@@ -41,6 +50,10 @@ const Popup = () => {
         setTargetLanguage(config.targetLanguage);
         setIsAutoTranslate(config.autoTranslate);
         setEnableAnimations(config.enableAnimations);
+
+        // Load history
+        const historyItems = await getHistory();
+        setHistory(historyItems);
       } catch (err) {
         console.error("Error loading config:", err);
         setError("Failed to load settings");
@@ -168,6 +181,19 @@ const Popup = () => {
         setError(result.error);
       } else {
         setTranslatedText(result.translatedText);
+
+        // Add to history
+        await addToHistory({
+          type: "translation",
+          originalText: inputText,
+          translatedText: result.translatedText,
+          sourceLanguage,
+          targetLanguage,
+        });
+
+        // Refresh history
+        const historyItems = await getHistory();
+        setHistory(historyItems);
       }
     } catch (err) {
       console.error("Translation error:", err);
@@ -200,6 +226,15 @@ const Popup = () => {
           const transcribedText = await speechToText(audioBlob, apiKey);
           setInputText(transcribedText);
 
+          // Add to history as transcription
+          await addToHistory({
+            type: "transcription",
+            originalText: transcribedText,
+            translatedText: transcribedText,
+            sourceLanguage: "auto",
+            targetLanguage: "auto",
+          });
+
           // Auto-translate if enabled
           if (isAutoTranslate) {
             const result = await translateText(
@@ -213,8 +248,21 @@ const Popup = () => {
               setError(result.error);
             } else {
               setTranslatedText(result.translatedText);
+
+              // Add to history as translation
+              await addToHistory({
+                type: "translation",
+                originalText: transcribedText,
+                translatedText: result.translatedText,
+                sourceLanguage,
+                targetLanguage,
+              });
             }
           }
+
+          // Refresh history
+          const historyItems = await getHistory();
+          setHistory(historyItems);
         } catch (err) {
           console.error("Speech to text error:", err);
           setError(err instanceof Error ? err.message : "An error occurred");
@@ -233,6 +281,27 @@ const Popup = () => {
       console.error("Error starting recording:", err);
       setError("Failed to access microphone");
     }
+  };
+
+  // History management functions
+  const handleClearHistory = async () => {
+    if (confirm("Êtes-vous sûr de vouloir effacer tout l'historique ?")) {
+      await clearHistory();
+      setHistory([]);
+    }
+  };
+
+  const handleDeleteHistoryItem = async (id: string) => {
+    await deleteHistoryItem(id);
+    const updatedHistory = await getHistory();
+    setHistory(updatedHistory);
+  };
+
+  const handleCopyFromHistory = (text: string) => {
+    navigator.clipboard.writeText(text).catch((err) => {
+      console.error("Failed to copy text:", err);
+      setError("Failed to copy to clipboard");
+    });
   };
 
   const stopRecording = () => {
@@ -254,7 +323,7 @@ const Popup = () => {
   };
 
   return (
-    <div className="min-w-[350px] p-4 bg-white text-gray-900">
+    <div className="min-w-[450px] p-4 bg-white text-gray-900">
       <header className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <img
@@ -364,6 +433,17 @@ const Popup = () => {
           onClick={() => setActiveTab("voice")}
         >
           Voice to Text
+        </button>
+
+        <button
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === "history"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-600 hover:text-gray-800"
+          }`}
+          onClick={() => setActiveTab("history")}
+        >
+          Historique
         </button>
       </div>
 
@@ -542,7 +622,7 @@ const Popup = () => {
               </motion.div>
             )}
           </motion.div>
-        ) : (
+        ) : activeTab === "voice" ? (
           <motion.div
             key="voice"
             initial={{ opacity: 0, x: 10 }}
@@ -651,6 +731,21 @@ const Popup = () => {
                 </div>
               </div>
             )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="history"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <HistoryTab
+              history={history}
+              onCopyText={handleCopyFromHistory}
+              onDeleteHistoryItem={handleDeleteHistoryItem}
+              onClearHistory={handleClearHistory}
+            />
           </motion.div>
         )}
       </AnimatePresence>

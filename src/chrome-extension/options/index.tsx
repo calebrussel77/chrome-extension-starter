@@ -147,7 +147,7 @@ const Options = () => {
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              Google AI Studio
+              Platform OpenAI
             </a>
           </p>
         </div>

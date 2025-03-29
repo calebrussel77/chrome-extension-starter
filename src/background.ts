@@ -1,5 +1,6 @@
 import { translateText } from "./services/api";
 import {
+  addToHistory,
   getConfig,
   isSiteDisabled,
   toggleSiteDisabled,
@@ -55,29 +56,54 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         config.apiKey
       );
 
-      // Send translation result to content script
-      chrome.tabs.sendMessage(tab.id, {
-        type: "SHOW_TRANSLATION",
-        translation: result.translatedText,
+      // Add to history
+      await addToHistory({
+        type: "translation",
         originalText: info.selectionText,
+        translatedText: result.translatedText ?? "",
+        sourceLanguage: config.sourceLanguage,
+        targetLanguage: config.targetLanguage,
       });
+
+      // Send translation result to content script
+      chrome.tabs
+        .sendMessage(tab.id, {
+          type: "SHOW_TRANSLATION",
+          translation: result.translatedText,
+          originalText: info.selectionText,
+          error: result.error,
+        })
+        .catch((error) => {
+          console.error("Error sending message to content script:", error);
+        });
     } catch (error) {
       console.error("Translation error:", error);
 
       // Send error to content script
-      chrome.tabs.sendMessage(tab.id, {
-        type: "SHOW_ERROR",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      chrome.tabs
+        .sendMessage(tab.id, {
+          type: "SHOW_ERROR",
+          error: error instanceof Error ? error.message : "Unknown error",
+        })
+        .catch((err) => {
+          console.error("Error sending error message to content script:", err);
+        });
     }
   } else if (info.menuItemId === "toggleSiteDisabled" && tab.url) {
     const newStatus = await toggleSiteDisabled(tab.url);
 
     // Notify content script about the status change
-    chrome.tabs.sendMessage(tab.id, {
-      type: "SITE_STATUS_CHANGED",
-      isDisabled: newStatus,
-    });
+    chrome.tabs
+      .sendMessage(tab.id, {
+        type: "SITE_STATUS_CHANGED",
+        isDisabled: newStatus,
+      })
+      .catch((error) => {
+        console.error(
+          "Error sending site status message to content script:",
+          error
+        );
+      });
   }
 });
 
@@ -85,7 +111,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
   (async () => {
     try {
-      if (message.type === MessageType.TRANSLATE_SELECTION) {
+      if (message.type === "PING") {
+        sendResponse({ status: "Background script is active" });
+        return;
+      } else if (message.type === MessageType.TRANSLATE_SELECTION) {
         const { text, sourceLanguage, targetLanguage } =
           message as TranslateSelectionMessage;
         const config = await getConfig();
@@ -113,6 +142,8 @@ chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
       } else if (message.type === MessageType.GET_CONFIG) {
         const config = await getConfig();
         sendResponse(config);
+      } else {
+        sendResponse({ error: "Unknown message type" });
       }
     } catch (error) {
       console.error("Error handling message:", error);

@@ -35,6 +35,7 @@ export const LANGUAGES: Language[] = [
 ];
 
 // Default configuration values
+// Default configuration values
 export const DEFAULT_CONFIG = {
   apiKey: "",
   disabledSites: [] as string[],
@@ -42,4 +43,5 @@ export const DEFAULT_CONFIG = {
   targetLanguage: "en",
   autoTranslate: true,
   enableAnimations: true,
+  history: [],
 };

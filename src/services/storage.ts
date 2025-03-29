@@ -1,5 +1,5 @@
 import { DEFAULT_CONFIG } from "../languages";
-import { ExtensionConfig } from "../types";
+import { ExtensionConfig, HistoryItem } from "../types";
 
 /**
  * Gets the extension configuration from Chrome storage
@@ -8,7 +8,11 @@ import { ExtensionConfig } from "../types";
 export const getConfig = async (): Promise<ExtensionConfig> => {
   return new Promise((resolve) => {
     chrome.storage.sync.get(["extensionConfig"], (result) => {
-      const config = result.extensionConfig ?? DEFAULT_CONFIG;
+      const config = result.extensionConfig ?? {
+        ...DEFAULT_CONFIG,
+        history: [],
+      };
+      if (!config.history) config.history = [];
       resolve(config);
     });
   });
@@ -24,7 +28,11 @@ export const updateConfig = async (
 ): Promise<void> => {
   return new Promise((resolve) => {
     chrome.storage.sync.get(["extensionConfig"], (result) => {
-      const currentConfig = result.extensionConfig ?? DEFAULT_CONFIG;
+      const currentConfig = result.extensionConfig ?? {
+        ...DEFAULT_CONFIG,
+        history: [],
+      };
+      if (!currentConfig.history) currentConfig.history = [];
       const newConfig = { ...currentConfig, ...config };
 
       chrome.storage.sync.set({ extensionConfig: newConfig }, () => {
@@ -32,6 +40,60 @@ export const updateConfig = async (
       });
     });
   });
+};
+
+/**
+ * Adds an item to the history
+ * @param item The history item to add
+ * @returns A promise that resolves when the item is added
+ */
+export const addToHistory = async (
+  item: Omit<HistoryItem, "id" | "timestamp">
+): Promise<void> => {
+  const config = await getConfig();
+  const history = config.history || [];
+
+  const newItem: HistoryItem = {
+    ...item,
+    id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    timestamp: Date.now(),
+  };
+
+  // Limit history to 100 items to avoid storage issues
+  const newHistory = [newItem, ...history].slice(0, 100);
+
+  await updateConfig({ history: newHistory });
+};
+
+/**
+ * Gets the history items
+ * @returns A promise that resolves to the history items
+ */
+export const getHistory = async (): Promise<HistoryItem[]> => {
+  const config = await getConfig();
+  return config.history || [];
+};
+
+/**
+ * Clears the history
+ * @returns A promise that resolves when the history is cleared
+ */
+export const clearHistory = async (): Promise<void> => {
+  await updateConfig({ history: [] });
+};
+
+/**
+ * Deletes a history item
+ * @param id The ID of the history item to delete
+ * @returns A promise that resolves when the item is deleted
+ */
+export const deleteHistoryItem = async (id: string): Promise<void> => {
+  const config = await getConfig();
+  const history = config.history || [];
+
+  const newHistory = history.filter((item) => item.id !== id);
+
+  await updateConfig({ history: newHistory });
 };
 
 /**

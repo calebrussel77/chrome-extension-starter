@@ -8,29 +8,74 @@ let translationPopup: HTMLDivElement | null = null;
 
 // Initialize the content script
 const init = async () => {
-  // Check if the extension is disabled for this site
-  const hostname = window.location.hostname;
-  const config = await getConfig();
-  isExtensionDisabled = config.disabledSites.includes(hostname);
+  try {
+    // Check if the extension is disabled for this site
+    const hostname = window.location.hostname;
 
-  // Listen for text selection events
-  document.addEventListener("mouseup", handleTextSelection);
-
-  // Listen for messages from the popup and background script
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message.type === "SHOW_TRANSLATION") {
-      showTranslation(message.translation, message.originalText);
-    } else if (message.type === "SHOW_ERROR") {
-      showError(message.error);
-    } else if (message.type === "SITE_STATUS_CHANGED") {
-      isExtensionDisabled = message.isDisabled;
-
-      if (isExtensionDisabled && translationPopup) {
-        translationPopup.remove();
-        translationPopup = null;
+    // Send a message to the background script to check if it's running
+    const checkConnection = async () => {
+      try {
+        const response = await chrome.runtime.sendMessage({ type: "PING" });
+        console.log("Extension connection established:", response);
+      } catch (error) {
+        console.warn(
+          "Could not establish connection to extension background script:",
+          error
+        );
       }
-    }
-  });
+    };
+
+    // Check background connection
+    await checkConnection();
+
+    // Get config
+    chrome.runtime.sendMessage({ type: "GET_CONFIG" }, (config) => {
+      if (chrome.runtime.lastError) {
+        console.warn("Error getting config:", chrome.runtime.lastError);
+        return;
+      }
+
+      if (config && config.disabledSites) {
+        isExtensionDisabled = config.disabledSites.includes(hostname);
+      }
+    });
+
+    // Listen for text selection events
+    document.addEventListener("mouseup", handleTextSelection);
+
+    // Listen for messages from the popup and background script
+    chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
+      console.log("Content script received message:", message);
+
+      if (message.type === "SHOW_TRANSLATION") {
+        if (message.error) {
+          showError(message.error);
+        } else {
+          showTranslation(message.translation, message.originalText);
+        }
+        sendResponse({ success: true });
+      } else if (message.type === "SHOW_ERROR") {
+        showError(message.error);
+        sendResponse({ success: true });
+      } else if (message.type === "SITE_STATUS_CHANGED") {
+        isExtensionDisabled = message.isDisabled;
+
+        if (isExtensionDisabled && translationPopup) {
+          translationPopup.remove();
+          translationPopup = null;
+        }
+        sendResponse({ success: true });
+      } else if (message.type === "PING") {
+        sendResponse({ status: "Content script is active" });
+      }
+
+      return true; // Keep the message channel open for async responses
+    });
+
+    console.log("AI Translator Pro content script initialized");
+  } catch (error) {
+    console.error("Error initializing content script:", error);
+  }
 };
 
 // Handle text selection
