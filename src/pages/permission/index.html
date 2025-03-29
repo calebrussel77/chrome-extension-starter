@@ -1,10 +1,115 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Request Permissions</title>
+    <title>Microphone Access</title>
     <script type="module" src="./requestPermission.ts"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
+        text-align: center;
+        background-color: #f8f9fa;
+      }
+
+      .container {
+        max-width: 500px;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #1a73e8;
+        font-size: 24px;
+        margin-bottom: 16px;
+      }
+
+      p {
+        color: #5f6368;
+        line-height: 1.5;
+        margin-bottom: 20px;
+      }
+
+      .status {
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        font-weight: 500;
+      }
+
+      .success {
+        background-color: #e6f4ea;
+        color: #137333;
+      }
+
+      .error {
+        background-color: #fce8e6;
+        color: #c5221f;
+      }
+
+      .pending {
+        background-color: #fff8e1;
+        color: #e37400;
+      }
+
+      .icon {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+      }
+    </style>
   </head>
   <body>
-    <!-- Iframe pour la gestion des permissions du microphone -->
+    <div class="container">
+      <img src="/public/48.png" alt="AI Translator Pro" class="icon" />
+      <h1>Microphone Access</h1>
+      <p>
+        To use the voice transcription feature, AI Translator Pro needs access
+        to your microphone.
+      </p>
+
+      <div id="status" class="status pending">
+        Checking microphone access...
+      </div>
+
+      <p id="instructions">
+        If the browser asks for permission to access the microphone, please
+        click "Allow".
+      </p>
+    </div>
+
+    <script>
+      // Listen for messages from the main script
+      window.addEventListener("message", (event) => {
+        const statusElement = document.getElementById("status");
+        const instructionsElement = document.getElementById("instructions");
+
+        if (event.data.type === "MICROPHONE_PERMISSION_GRANTED") {
+          statusElement.className = "status success";
+          statusElement.textContent = "Microphone access granted!";
+          instructionsElement.textContent =
+            "You can now use the voice transcription feature.";
+        } else if (event.data.type === "MICROPHONE_PERMISSION_DENIED") {
+          statusElement.className = "status error";
+          statusElement.textContent = "Microphone access denied.";
+          instructionsElement.textContent =
+            "Please allow microphone access in your browser settings to use this feature.";
+        } else if (event.data.type === "MICROPHONE_PERMISSION_ERROR") {
+          statusElement.className = "status error";
+          statusElement.textContent = "Microphone access error";
+          instructionsElement.textContent =
+            event.data.error ||
+            "An error occurred while requesting microphone access.";
+        }
+      });
+    </script>
   </body>
 </html>

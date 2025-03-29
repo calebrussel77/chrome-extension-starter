@@ -203,6 +203,25 @@ const injectContentScript = async (tabId: number): Promise<void> => {
   }
 };
 
+// Fonction pour capturer l'audio d'un onglet
+const captureTabAudio = async () => {
+  return new Promise((resolve, reject) => {
+    chrome.tabCapture.capture({ audio: true, video: false }, (stream) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+
+      if (!stream) {
+        reject(new Error("Failed to capture tab audio"));
+        return;
+      }
+
+      resolve(stream);
+    });
+  });
+};
+
 // Listen for messages from other parts of the extension
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
@@ -253,11 +272,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const { config } = message as UpdateConfigMessage;
         await updateConfig(config);
         sendResponse({ success: true });
-      } else if (message.type === MessageType.GET_CONFIG) {
-        const config = await getConfig();
-        sendResponse(config);
-      } else {
-        sendResponse({ error: "Unknown message type" });
+      } else if (message.type === "CAPTURE_TAB_AUDIO") {
+        if (sender.tab?.id) {
+          try {
+            await captureTabAudio();
+            // Nous ne pouvons pas envoyer directement le stream par message,
+            // donc nous indiquons simplement le succès
+            sendResponse({ success: true });
+          } catch (error) {
+            console.error("Error capturing tab audio:", error);
+            sendResponse({
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error",
+            });
+          }
+        } else {
+          sendResponse({ success: false, error: "No tab ID available" });
+        }
       }
     } catch (error) {
       console.error("Error handling message:", error);
@@ -267,6 +298,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
   })();
 
-  // Return true to indicate we'll respond asynchronously
+  // Return true to indicate that we will send a response asynchronously
   return true;
+});
+
+// Exposer chrome.tabCapture.getMediaStreamId une fois injecté dans le popup
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === "microphone-permission") {
+    port.onMessage.addListener((msg) => {
+      if (msg.type === "GET_TAB_CAPTURE_MEDIA_STREAM_ID") {
+        chrome.tabCapture.getMediaStreamId(
+          { consumerTabId: msg.tabId },
+          (streamId) => {
+            port.postMessage({ type: "TAB_CAPTURE_MEDIA_STREAM_ID", streamId });
+          }
+        );
+      }
+    });
+  }
 });

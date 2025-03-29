@@ -88,6 +88,7 @@ export const speechToText = async (
 
     const openai = new OpenAI({
       apiKey: apiKey,
+      dangerouslyAllowBrowser: true,
     });
 
     // Convert Blob to File with appropriate format

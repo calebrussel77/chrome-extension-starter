@@ -1,12 +1,17 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
 import Select from "../../components/Select";
 import Toggle from "../../components/Toggle";
 import { LANGUAGES } from "../../languages";
-import { getConfig, updateConfig } from "../../services/storage";
+import {
+  getConfig,
+  getMicrophonePermission,
+  setMicrophonePermission,
+  updateConfig,
+} from "../../services/storage";
 
 import "../../chrome-extension/global.css";
 
@@ -22,6 +27,14 @@ const Options = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  // Microphone permission states
+  const [micPermission, setMicPermission] = useState<
+    "granted" | "denied" | "prompt" | "checking"
+  >("checking");
+  const [isMicTesting, setIsMicTesting] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Load config on mount
   useEffect(() => {
@@ -41,7 +54,156 @@ const Options = () => {
     };
 
     loadConfig();
+    checkMicrophonePermission();
   }, []);
+
+  // Check microphone permission
+  const checkMicrophonePermission = async () => {
+    setMicPermission("checking");
+    try {
+      // First check if we have stored the permission
+      const storedPermission = await getMicrophonePermission();
+
+      if (navigator.permissions) {
+        const permissionStatus = await navigator.permissions.query({
+          name: "microphone" as PermissionName,
+        });
+        const currentState = permissionStatus.state as
+          | "granted"
+          | "denied"
+          | "prompt";
+        setMicPermission(currentState);
+
+        // Update stored permission if it's granted
+        if (currentState === "granted") {
+          await setMicrophonePermission(true);
+        } else if (currentState === "denied") {
+          await setMicrophonePermission(false);
+        }
+
+        // Listen for permission changes
+        permissionStatus.addEventListener("change", async () => {
+          const newState = permissionStatus.state as
+            | "granted"
+            | "denied"
+            | "prompt";
+          setMicPermission(newState);
+
+          if (newState === "granted") {
+            await setMicrophonePermission(true);
+          } else if (newState === "denied") {
+            await setMicrophonePermission(false);
+          }
+        });
+      } else if (storedPermission) {
+        // If Permissions API is not available but we have stored permission
+        setMicPermission("granted");
+      } else {
+        // Fallback if Permissions API is not available
+        setMicPermission("prompt");
+      }
+    } catch (err) {
+      console.error("Error checking microphone permission:", err);
+      setMicPermission("prompt");
+    }
+  };
+
+  // Request microphone permission
+  const requestMicrophonePermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Stop all tracks immediately to not keep the microphone active
+      stream.getTracks().forEach((track) => track.stop());
+      setMicPermission("granted");
+      await setMicrophonePermission(true);
+      return true;
+    } catch (err) {
+      console.error("Error requesting microphone permission:", err);
+      setMicPermission("denied");
+      await setMicrophonePermission(false);
+      return false;
+    }
+  };
+
+  // Test microphone
+  const testMicrophone = async () => {
+    setIsMicTesting(true);
+    try {
+      // First ensure we have permission
+      const hasPermission =
+        micPermission === "granted" || (await requestMicrophonePermission());
+      if (!hasPermission) {
+        setError("Microphone access denied. Please grant permission.");
+        setIsMicTesting(false);
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      // Create audio feedback element
+      const audioFeedback = new Audio();
+      audioFeedback.srcObject = stream;
+      audioFeedback.play();
+
+      // Create media recorder
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      // Set up event handlers
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        audioFeedback.pause();
+        audioFeedback.srcObject = null;
+
+        // Create audio playback from recorded chunks
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+
+        // Clean up
+        stream.getTracks().forEach((track) => track.stop());
+        setIsMicTesting(false);
+      };
+
+      // Start recording for 3 seconds
+      mediaRecorder.start();
+      setTimeout(() => {
+        if (mediaRecorder.state !== "inactive") {
+          mediaRecorder.stop();
+        }
+      }, 3000);
+    } catch (err) {
+      console.error("Error testing microphone:", err);
+      setError(
+        "Failed to test microphone: " +
+          (err instanceof Error ? err.message : "Unknown error")
+      );
+      setIsMicTesting(false);
+    }
+  };
+
+  // Cancel microphone test
+  const cancelMicTest = () => {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      mediaRecorderRef.current.stop();
+    }
+  };
 
   // Save config
   const saveConfig = async () => {
@@ -106,6 +268,47 @@ const Options = () => {
     setDisabledSites(disabledSites.filter((s) => s !== site));
   };
 
+  // Get permission status UI elements
+  const getPermissionStatusUI = () => {
+    if (micPermission === "checking") {
+      return (
+        <div className="flex items-center">
+          <div className="w-4 h-4 rounded-full bg-yellow-500 animate-pulse mr-2"></div>
+          <span className="text-sm text-yellow-600">
+            Checking microphone permission...
+          </span>
+        </div>
+      );
+    } else if (micPermission === "granted") {
+      return (
+        <div className="flex items-center">
+          <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+          <span className="text-sm text-green-600">
+            Microphone access granted
+          </span>
+        </div>
+      );
+    } else if (micPermission === "denied") {
+      return (
+        <div className="flex items-center">
+          <div className="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+          <span className="text-sm text-red-600">
+            Microphone access denied. Please allow it in your browser settings.
+          </span>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center">
+          <div className="w-4 h-4 rounded-full bg-yellow-500 mr-2"></div>
+          <span className="text-sm text-yellow-600">
+            Microphone permission not yet requested
+          </span>
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <header className="mb-8">
@@ -150,6 +353,50 @@ const Options = () => {
             </a>
           </p>
         </div>
+      </section>
+
+      {/* Microphone Permission Section */}
+      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
+        <h2 className="text-lg font-medium mb-4">Microphone Access</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Grant microphone access to use voice-to-text features.
+        </p>
+
+        <div className="mb-4">{getPermissionStatusUI()}</div>
+
+        <div className="flex space-x-2">
+          {micPermission !== "granted" && (
+            <Button
+              variant="primary"
+              onClick={requestMicrophonePermission}
+              disabled={micPermission === "checking"}
+            >
+              Allow Microphone Access
+            </Button>
+          )}
+
+          <Button
+            variant={isMicTesting ? "secondary" : "outline"}
+            onClick={isMicTesting ? cancelMicTest : testMicrophone}
+            disabled={
+              micPermission === "denied" || micPermission === "checking"
+            }
+          >
+            {isMicTesting ? "Stop Test" : "Test Microphone"}
+          </Button>
+        </div>
+
+        {isMicTesting && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-100">
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse mr-2"></div>
+              <p className="text-sm text-blue-700">
+                Recording in progress... Speak now to test your microphone.
+                You'll hear your recording after 3 seconds.
+              </p>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Translation Options */}
@@ -258,7 +505,7 @@ const Options = () => {
       </section>
 
       {/* Save Button */}
-      <div className="flex items-end gap-4">
+      <div className="w-full flex justify-end items-center gap-4">
         {error && (
           <motion.p
             initial={{ opacity: 0 }}

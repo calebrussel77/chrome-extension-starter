@@ -128,3 +128,16 @@ export const toggleSiteDisabled = async (site: string): Promise<boolean> => {
   await updateConfig({ disabledSites: newDisabledSites });
   return !isCurrentlyDisabled;
 };
+
+// Add function to save microphone permission status
+export const setMicrophonePermission = async (
+  granted: boolean
+): Promise<void> => {
+  await chrome.storage.local.set({ microphonePermission: granted });
+};
+
+// Add function to get microphone permission status
+export const getMicrophonePermission = async (): Promise<boolean> => {
+  const result = await chrome.storage.local.get(["microphonePermission"]);
+  return result.microphonePermission === true;
+};

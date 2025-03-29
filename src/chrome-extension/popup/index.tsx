@@ -8,6 +8,7 @@ import {
   History,
   Info,
   Mic,
+  MicOff,
   Settings,
   Square,
 } from "lucide-react";
@@ -25,6 +26,7 @@ import {
   deleteHistoryItem,
   getConfig,
   getHistory,
+  getMicrophonePermission,
   updateConfig,
 } from "../../services/storage";
 import { HistoryItem, MessageType } from "../../types";
@@ -52,6 +54,11 @@ const Popup: React.FC = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  // Add a microphone permission state
+  const [microphonePermission, setMicrophonePermission] = useState<
+    boolean | null
+  >(null);
+
   // Load config and history on mount
   useEffect(() => {
     const loadConfig = async () => {
@@ -66,6 +73,10 @@ const Popup: React.FC = () => {
         // Load history
         const historyItems = await getHistory();
         setHistory(historyItems);
+
+        // Check microphone permission
+        const hasMicPermission = await getMicrophonePermission();
+        setMicrophonePermission(hasMicPermission);
       } catch (err) {
         console.error("Error loading config:", err);
         setError("Failed to load settings");
@@ -217,81 +228,154 @@ const Popup: React.FC = () => {
 
   // Handle recording for speech to text
   const startRecording = async () => {
+    setError("");
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // First check if the browser supports the API
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError("Your browser does not support microphone access");
+        return;
+      }
 
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
+      // Try to get microphone permission directly
+      try {
+        console.log("Requesting microphone permission...");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
         });
 
-        try {
-          setIsTranslating(true);
-          const transcribedText = await speechToText(audioBlob, apiKey);
-          setInputText(transcribedText);
+        // Permission granted, proceed with recording
+        console.log("Microphone permission granted, starting recording...");
 
-          // Add to history as transcription
-          await addToHistory({
-            type: "transcription",
-            originalText: transcribedText,
-            translatedText: transcribedText,
-            sourceLanguage: "auto",
-            targetLanguage: "auto",
+        // Create media recorder
+        const mediaRecorder = new MediaRecorder(stream, {
+          mimeType: "audio/webm;codecs=opus",
+        });
+
+        mediaRecorderRef.current = mediaRecorder;
+        audioChunksRef.current = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunksRef.current.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: "audio/webm",
           });
 
-          // Auto-translate if enabled
-          if (isAutoTranslate) {
-            const result = await translateText(
-              transcribedText,
-              sourceLanguage,
-              targetLanguage,
-              apiKey
-            );
+          try {
+            setIsTranslating(true);
+            setError("");
+            const transcribedText = await speechToText(audioBlob, apiKey);
+            setInputText(transcribedText);
 
-            if (result.error) {
-              setError(result.error);
-            } else {
-              setTranslatedText(result.translatedText);
+            // Add to history as transcription
+            await addToHistory({
+              type: "transcription",
+              originalText: transcribedText,
+              translatedText: transcribedText,
+              sourceLanguage: "auto",
+              targetLanguage: "auto",
+            });
 
-              // Add to history as translation
-              await addToHistory({
-                type: "translation",
-                originalText: transcribedText,
-                translatedText: result.translatedText,
+            // Auto-translate if enabled
+            if (isAutoTranslate) {
+              const result = await translateText(
+                transcribedText,
                 sourceLanguage,
                 targetLanguage,
-              });
+                apiKey
+              );
+
+              if (result.error) {
+                setError(result.error);
+              } else {
+                setTranslatedText(result.translatedText);
+
+                // Add to history as translation
+                await addToHistory({
+                  type: "translation",
+                  originalText: transcribedText,
+                  translatedText: result.translatedText,
+                  sourceLanguage,
+                  targetLanguage,
+                });
+              }
             }
+
+            // Refresh history
+            const historyItems = await getHistory();
+            setHistory(historyItems);
+          } catch (err) {
+            console.error("Speech to text error:", err);
+            setError(err instanceof Error ? err.message : "An error occurred");
+          } finally {
+            setIsTranslating(false);
           }
 
-          // Refresh history
-          const historyItems = await getHistory();
-          setHistory(historyItems);
-        } catch (err) {
-          console.error("Speech to text error:", err);
-          setError(err instanceof Error ? err.message : "An error occurred");
-        } finally {
-          setIsTranslating(false);
+          // Stop all tracks
+          stream.getTracks().forEach((track) => track.stop());
+        };
+
+        // Set permission as granted for future use
+        await setMicrophonePermission(true);
+        setMicrophonePermission(true);
+
+        // Start recording
+        mediaRecorder.start();
+        setIsRecording(true);
+      } catch (error) {
+        console.error("Error accessing microphone:", error);
+        if (error instanceof Error) {
+          if (error.name === "NotAllowedError") {
+            setError(
+              "Microphone access denied. Please check your browser settings."
+            );
+            setMicrophonePermission(false);
+            await setMicrophonePermission(false);
+          } else if (error.name === "NotFoundError") {
+            setError("No microphone was found on your device.");
+          } else {
+            setError(`Microphone access error: ${error.message}`);
+          }
+        } else {
+          setError("Failed to access microphone for an unknown reason");
         }
-
-        // Stop all tracks
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      setError("");
+      }
     } catch (err) {
-      console.error("Error starting recording:", err);
-      setError("Failed to access microphone");
+      handleRecordingError(err);
+    }
+  };
+
+  // Function to handle recording errors
+  const handleRecordingError = (err: Error | unknown) => {
+    console.error("Error starting recording:", err);
+
+    // Provide more detailed error messages based on error type
+    if (err instanceof Error) {
+      console.log("Error name:", err.name);
+      console.log("Error message:", err.message);
+
+      if (err.name === "NotAllowedError") {
+        setError(
+          "Microphone access denied. Please check your browser settings."
+        );
+      } else if (err.name === "NotFoundError") {
+        setError("No microphone was found on your device.");
+      } else if (err.name === "NotReadableError") {
+        setError(
+          "Unable to access the microphone. It may be in use by another application."
+        );
+      } else {
+        setError(`Microphone access error: ${err.message}`);
+      }
+    } else {
+      setError("Failed to access microphone for an unknown reason");
     }
   };
 
@@ -317,7 +401,10 @@ const Popup: React.FC = () => {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
@@ -394,6 +481,34 @@ const Popup: React.FC = () => {
             label={isSiteDisabled ? "Enable" : "Disable"}
           />
         </div>
+      )}
+
+      {/* Microphone Permission Warning */}
+      {activeTab === "voice" && microphonePermission === false && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 shadow-sm"
+        >
+          <div className="flex items-start">
+            <MicOff className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="ml-3">
+              <p className="text-sm text-amber-800">
+                Microphone access is required for voice recording. Please allow
+                microphone access in the{" "}
+                <a
+                  href="options.html"
+                  className="font-medium text-amber-900 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  extension settings
+                </a>
+                .
+              </p>
+            </div>
+          </div>
+        </motion.div>
       )}
 
       {/* Tabs */}
@@ -589,7 +704,7 @@ const Popup: React.FC = () => {
                 size="lg"
                 onClick={isRecording ? stopRecording : startRecording}
                 isLoading={isTranslating}
-                disabled={!apiKey}
+                disabled={!apiKey || microphonePermission === false}
                 className={`rounded-full p-5 shadow-md hover:shadow-lg transition-all duration-200 ${
                   isRecording ? "bg-red-100 hover:bg-red-200" : ""
                 }`}
@@ -607,6 +722,8 @@ const Popup: React.FC = () => {
                     <span className="animate-pulse">●</span> Recording in
                     progress...
                   </span>
+                ) : microphonePermission === false ? (
+                  "Microphone access required"
                 ) : (
                   "Ready to record"
                 )}
