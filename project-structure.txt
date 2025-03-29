@@ -5,7 +5,7 @@
 │   │   │   ├── 16.png                 # Icône 16x16
 │   │   │   ├── 32.png                 # Icône 32x32
 │   │   │   ├── 48.png                 # Icône 48x48
-│   │   │   └── 192.png                # Icône 192x192
+│   │   │   └── 128.png                # Icône 128x128
 │   │   ├── 📁 popup/
 │   │   │   └── index.tsx              # Composant React pour la popup de l'extension
 │   │   ├── 📁 options/

@@ -115,51 +115,50 @@ const Options = () => {
             alt="AI Translator Pro"
             className="w-10 h-10"
           />
-          <h1 className="text-2xl font-bold">AI Translator Pro - Paramètres</h1>
+          <h1 className="text-2xl font-bold">AI Translator Pro - Settings</h1>
         </div>
         <p className="text-gray-600">
-          Configurez votre clé API OpenAI et personnalisez les options de
-          traduction.
+          Configure your API keys and customize translation options.
         </p>
       </header>
 
       {/* API Key Section */}
-      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-medium mb-4">Clés API</h2>
+      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
+        <h2 className="text-lg font-medium mb-4">API Keys</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Configurez vos clés API pour accéder aux fonctionnalités d'IA.
+          Set up your API keys to access AI features.
         </p>
 
         <div className="mb-4">
           <Input
-            label="Clé API Gemini"
+            label="Gemini API Key"
             value={apiKey}
             onChange={setApiKey}
             fullWidth
             type="password"
-            placeholder="Entrez votre clé API OpenAI..."
+            placeholder="Enter your API key..."
           />
           <p className="text-xs text-gray-500 mt-1">
-            Obtenez votre clé API sur{" "}
+            Get your API key from{" "}
             <a
               href="https://platform.openai.com/api-keys"
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              Platform OpenAI
+              OpenAI Platform
             </a>
           </p>
         </div>
       </section>
 
       {/* Translation Options */}
-      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-medium mb-4">Options de traduction</h2>
+      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
+        <h2 className="text-lg font-medium mb-4">Translation Options</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <Select
-            label="Langue source par défaut"
+            label="Default Source Language"
             options={LANGUAGES.map((lang) => ({
               value: lang.code,
               label: lang.name,
@@ -170,7 +169,7 @@ const Options = () => {
           />
 
           <Select
-            label="Langue cible par défaut"
+            label="Default Target Language"
             options={LANGUAGES.filter((lang) => lang.code !== "auto").map(
               (lang) => ({
                 value: lang.code,
@@ -187,8 +186,8 @@ const Options = () => {
           <Toggle
             checked={isAutoTranslate}
             onChange={setIsAutoTranslate}
-            label="Traduction automatique"
-            description="Traduire automatiquement le texte sélectionné"
+            label="Automatic Translation"
+            description="Automatically translate selected text"
           />
         </div>
 
@@ -196,45 +195,46 @@ const Options = () => {
           <Toggle
             checked={enableAnimations}
             onChange={setEnableAnimations}
-            label="Activer les animations"
-            description="Activer les animations dans l'interface"
+            label="Enable Animations"
+            description="Enable UI animations"
           />
         </div>
       </section>
 
       {/* Disabled Sites */}
-      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-medium mb-4">Sites désactivés</h2>
+      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
+        <h2 className="text-lg font-medium mb-4">Disabled Websites</h2>
         <p className="text-sm text-gray-600 mb-4">
-          L'extension ne fonctionnera pas sur ces sites.
+          The extension will not work on these websites.
         </p>
 
         <div className="flex gap-2 mb-4">
           <Input
             value={newSite}
             onChange={setNewSite}
-            placeholder="exemple.com"
+            placeholder="example.com"
             fullWidth
           />
 
           <Button onClick={addDisabledSite} disabled={!newSite}>
-            Ajouter
+            Add
           </Button>
         </div>
 
         <div className="space-y-2">
           {disabledSites.length === 0 ? (
-            <p className="text-sm text-gray-500">Aucun site désactivé</p>
+            <p className="text-sm text-gray-500">No disabled websites</p>
           ) : (
             disabledSites.map((site) => (
               <div
                 key={site}
-                className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
               >
                 <span className="text-sm">{site}</span>
                 <button
                   onClick={() => removeDisabledSite(site)}
-                  className="text-red-600 hover:text-red-800"
+                  className="text-red-600 hover:text-red-800 transition-colors p-1 rounded-full hover:bg-red-50"
+                  title="Remove website"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -258,16 +258,7 @@ const Options = () => {
       </section>
 
       {/* Save Button */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="primary"
-          size="lg"
-          onClick={saveConfig}
-          isLoading={isSaving}
-        >
-          Enregistrer les paramètres
-        </Button>
-
+      <div className="flex items-end gap-4">
         {error && (
           <motion.p
             initial={{ opacity: 0 }}
@@ -284,9 +275,17 @@ const Options = () => {
             animate={{ opacity: 1 }}
             className="text-green-600"
           >
-            Paramètres enregistrés avec succès!
+            Settings saved successfully!
           </motion.p>
         )}
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={saveConfig}
+          isLoading={isSaving}
+        >
+          Save Settings
+        </Button>
       </div>
     </div>
   );

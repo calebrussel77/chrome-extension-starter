@@ -1,4 +1,14 @@
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowLeftRight,
+  Copy,
+  Info,
+  Mic,
+  Settings,
+  Square,
+} from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Button from "../../components/Button";
@@ -285,7 +295,7 @@ const Popup: React.FC = () => {
 
   // History management functions
   const handleClearHistory = async () => {
-    if (confirm("Êtes-vous sûr de vouloir effacer tout l'historique ?")) {
+    if (confirm("Are you sure you want to clear all history?")) {
       await clearHistory();
       setHistory([]);
     }
@@ -323,42 +333,27 @@ const Popup: React.FC = () => {
   };
 
   return (
-    <div className="min-w-[450px] p-4 bg-white text-gray-900">
-      <header className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+    <div className="min-w-[450px] p-5 bg-white text-gray-900 shadow-sm rounded-lg">
+      <header className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
           <img
             src="/public/48.png"
             alt="AI Translator Pro"
-            className="w-8 h-8"
+            className="w-8 h-8 rounded-md shadow-sm"
           />
-          <h1 className="text-lg font-bold">AI Translator Pro</h1>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            AI Translator Pro
+          </h1>
         </div>
 
         <a
           href="options.html"
-          className="text-blue-600 hover:text-blue-800"
+          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors duration-200"
           target="_blank"
           rel="noopener noreferrer"
+          title="Settings"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-6 h-6"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
+          <Settings size={20} />
         </a>
       </header>
 
@@ -367,28 +362,13 @@ const Popup: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4"
+          className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 shadow-sm"
         >
           <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-5 h-5 text-yellow-600"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-                />
-              </svg>
-            </div>
+            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
             <div className="ml-3">
-              <p className="text-sm text-yellow-800">
-                Veuillez configurer votre clé API OpenAI dans les paramètres.
+              <p className="text-sm text-amber-800">
+                Please configure your OpenAI API key in the settings.
               </p>
             </div>
           </div>
@@ -397,38 +377,41 @@ const Popup: React.FC = () => {
 
       {/* Site Status */}
       {currentSite && (
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm text-gray-600">
-            Site actuel: <span className="font-medium">{currentSite}</span>
+        <div className="flex items-center justify-between mb-5 p-3 bg-gray-50 rounded-lg border border-gray-100">
+          <div className="flex items-center gap-2">
+            <Info size={16} className="text-gray-500" />
+            <div className="text-sm text-gray-600">
+              Current site: <span className="font-medium">{currentSite}</span>
+            </div>
           </div>
 
           <Toggle
             checked={!isSiteDisabled}
             onChange={() => toggleSiteDisabled()}
             size="sm"
-            label={isSiteDisabled ? "Activer" : "Désactiver"}
+            label={isSiteDisabled ? "Enable" : "Disable"}
           />
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex mb-4 border-b border-gray-200">
+      <div className="flex mb-5 border-b border-gray-200">
         <button
-          className={`px-4 py-2 text-sm font-medium ${
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 ${
             activeTab === "translate"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-800"
+              ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+              : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
           }`}
           onClick={() => setActiveTab("translate")}
         >
-          Traduire
+          Translate
         </button>
 
         <button
-          className={`px-4 py-2 text-sm font-medium ${
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 ${
             activeTab === "voice"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-800"
+              ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+              : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
           }`}
           onClick={() => setActiveTab("voice")}
         >
@@ -436,21 +419,21 @@ const Popup: React.FC = () => {
         </button>
 
         <button
-          className={`px-4 py-2 text-sm font-medium ${
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 ${
             activeTab === "history"
-              ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-800"
+              ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+              : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
           }`}
           onClick={() => setActiveTab("history")}
         >
-          Historique
+          History
         </button>
       </div>
 
       {/* Language Selectors */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-3 mb-5">
         <Select
-          label="Langue source"
+          label="Source language"
           options={LANGUAGES.map((lang) => ({
             value: lang.code,
             label: lang.name,
@@ -462,32 +445,20 @@ const Popup: React.FC = () => {
 
         <div className="flex items-center mt-6">
           <button
-            className="p-1 text-gray-500 hover:text-gray-700"
+            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors duration-200"
             onClick={() => {
               const temp = sourceLanguage;
               setSourceLanguage(targetLanguage);
               setTargetLanguage(temp);
             }}
+            title="Switch languages"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
-              />
-            </svg>
+            <ArrowLeftRight size={18} />
           </button>
         </div>
 
         <Select
-          label="Langue cible"
+          label="Target language"
           options={LANGUAGES.filter((lang) => lang.code !== "auto").map(
             (lang) => ({
               value: lang.code,
@@ -501,12 +472,12 @@ const Popup: React.FC = () => {
       </div>
 
       {/* Auto Translate Toggle */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-5 p-3 bg-gray-50 rounded-lg border border-gray-100">
         <Toggle
           checked={isAutoTranslate}
           onChange={setIsAutoTranslate}
-          label="Traduction automatique"
-          description="Traduire automatiquement le texte sélectionné"
+          label="Automatic translation"
+          description="Automatically translate selected text"
         />
       </div>
 
@@ -515,25 +486,10 @@ const Popup: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-red-50 border-l-4 border-red-400 p-3 mb-4"
+          className="bg-red-50 border border-red-200 rounded-lg p-3 mb-5 shadow-sm"
         >
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-5 h-5 text-red-600"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-                />
-              </svg>
-            </div>
+          <div className="flex items-start">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div className="ml-3">
               <p className="text-sm text-red-800">{error}</p>
             </div>
@@ -552,25 +508,25 @@ const Popup: React.FC = () => {
             transition={{ duration: 0.2 }}
           >
             {/* Input Text */}
-            <div className="mb-4">
+            <div className="mb-5">
               <label
                 htmlFor="inputText"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Texte à traduire
+                Text to translate
               </label>
               <textarea
                 id="inputText"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
                 rows={3}
-                placeholder="Entrez le texte à traduire..."
+                placeholder="Enter text to translate..."
               />
             </div>
 
             {/* Translate Button */}
-            <div className="mb-4">
+            <div className="mb-5">
               <Button
                 variant="primary"
                 size="md"
@@ -578,8 +534,9 @@ const Popup: React.FC = () => {
                 isLoading={isTranslating}
                 onClick={handleTranslate}
                 disabled={!apiKey || !inputText}
+                className="rounded-lg shadow-sm hover:shadow transition-all duration-200"
               >
-                Traduire
+                Translate
               </Button>
             </div>
 
@@ -590,33 +547,20 @@ const Popup: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-4"
               >
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Traduction
+                    Translation
                   </label>
 
                   <button
                     onClick={copyToClipboard}
-                    className="text-gray-500 hover:text-gray-700"
-                    title="Copier"
+                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
+                    title="Copy"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-5 h-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"
-                      />
-                    </svg>
+                    <Copy size={16} />
                   </button>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
                   <p className="text-sm">{translatedText}</p>
                 </div>
               </motion.div>
@@ -630,9 +574,9 @@ const Popup: React.FC = () => {
             exit={{ opacity: 0, x: 10 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="flex flex-col items-center mb-4">
+            <div className="flex flex-col items-center mb-5">
               <p className="text-sm text-gray-600 mb-4">
-                Appuyez sur le bouton pour commencer l'enregistrement vocal
+                Press the button to start voice recording
               </p>
 
               <Button
@@ -641,57 +585,38 @@ const Popup: React.FC = () => {
                 onClick={isRecording ? stopRecording : startRecording}
                 isLoading={isTranslating}
                 disabled={!apiKey}
-                className="rounded-full p-4"
+                className={`rounded-full p-5 shadow-md hover:shadow-lg transition-all duration-200 ${
+                  isRecording ? "bg-red-100 hover:bg-red-200" : ""
+                }`}
               >
                 {isRecording ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-10 h-10"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z"
-                    />
-                  </svg>
+                  <Square size={32} className="text-red-600" />
                 ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-10 h-10"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
-                    />
-                  </svg>
+                  <Mic size={32} />
                 )}
               </Button>
 
-              <p className="text-sm font-medium mt-2">
-                {isRecording
-                  ? "Enregistrement en cours..."
-                  : "Prêt à enregistrer"}
+              <p className="text-sm font-medium mt-3">
+                {isRecording ? (
+                  <span className="flex items-center gap-2 text-red-600">
+                    <span className="animate-pulse">●</span> Recording in
+                    progress...
+                  </span>
+                ) : (
+                  "Ready to record"
+                )}
               </p>
             </div>
 
             {/* Input Text */}
             {inputText && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-1">
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Texte transcrit
+                    Transcribed text
                   </label>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
                   <p className="text-sm">{inputText}</p>
                 </div>
               </div>
@@ -700,33 +625,20 @@ const Popup: React.FC = () => {
             {/* Translation Result */}
             {translatedText && (
               <div className="mb-4">
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Traduction
+                    Translation
                   </label>
 
                   <button
                     onClick={copyToClipboard}
-                    className="text-gray-500 hover:text-gray-700"
-                    title="Copier"
+                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
+                    title="Copy"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-5 h-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"
-                      />
-                    </svg>
+                    <Copy size={16} />
                   </button>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
                   <p className="text-sm">{translatedText}</p>
                 </div>
               </div>

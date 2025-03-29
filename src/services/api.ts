@@ -90,15 +90,16 @@ export const speechToText = async (
       apiKey: apiKey,
     });
 
-    // Convert Blob to File
+    // Convert Blob to File with appropriate format
     const file = new File([audioBlob], "audio.webm", { type: "audio/webm" });
 
     const transcription = await openai.audio.transcriptions.create({
       file: file,
-      model: "whisper-1", // Use Whisper model for audio transcription
+      model: "whisper-1", // Utiliser whisper-1 comme indiqué dans la documentation
+      response_format: "text",
     });
 
-    return transcription.text;
+    return transcription;
   } catch (error) {
     console.error("Speech to text error:", error);
     throw error;

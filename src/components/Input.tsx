@@ -29,7 +29,7 @@ const Input: React.FC<InputProps> = ({
 
   // Base classes
   const baseClasses =
-    "block rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100";
+    "block rounded-md border px-3 py-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100";
 
   // Width classes
   const widthClasses = fullWidth ? "w-full" : "";

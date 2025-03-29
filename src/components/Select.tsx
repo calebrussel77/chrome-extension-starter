@@ -1,5 +1,5 @@
+import { ChevronDownIcon } from "lucide-react";
 import React from "react";
-
 interface Option {
   value: string;
   label: string;
@@ -13,6 +13,7 @@ interface SelectProps
   label?: string;
   error?: string;
   fullWidth?: boolean;
+  description?: string;
 }
 
 const Select: React.FC<SelectProps> = ({
@@ -24,6 +25,7 @@ const Select: React.FC<SelectProps> = ({
   fullWidth = false,
   className = "",
   disabled,
+  description,
   ...props
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -32,7 +34,7 @@ const Select: React.FC<SelectProps> = ({
 
   // Base classes
   const baseClasses =
-    "block rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100";
+    "block rounded-md border px-3 py-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100 appearance-none pr-10";
 
   // Width classes
   const widthClasses = fullWidth ? "w-full" : "";
@@ -56,19 +58,32 @@ const Select: React.FC<SelectProps> = ({
         </label>
       )}
 
-      <select
-        value={value}
-        onChange={handleChange}
-        className={combinedClasses}
-        disabled={disabled}
-        {...props}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      {description && (
+        <p className="text-xs text-gray-500 mb-1">{description}</p>
+      )}
+
+      <div className="relative">
+        <select
+          value={value}
+          onChange={handleChange}
+          className={combinedClasses}
+          disabled={disabled}
+          {...props}
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+          <ChevronDownIcon
+            className="h-5 w-5 text-gray-400"
+            aria-hidden="true"
+          />
+        </div>
+      </div>
 
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
