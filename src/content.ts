@@ -32,7 +32,7 @@ const injectMicrophonePermissionIframe = async () => {
   iframe.setAttribute("hidden", "hidden");
   iframe.setAttribute("id", "permissionsIFrame");
   iframe.setAttribute("allow", "microphone");
-  iframe.src = "./chrome-extension/src/pages/permission/ndex.html");
+  iframe.src = "./chrome-extension/src/pages/permission/ndex.html";
   document.body.appendChild(iframe);
 
   // Listen for messages from the iframe
