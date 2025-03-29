@@ -32,7 +32,7 @@ const injectMicrophonePermissionIframe = async () => {
   iframe.setAttribute("hidden", "hidden");
   iframe.setAttribute("id", "permissionsIFrame");
   iframe.setAttribute("allow", "microphone");
-  iframe.src = chrome.runtime.getURL("/src/pages/permission/index.html");
+  iframe.src = "./chrome-extension/src/pages/permission/ndex.html");
   document.body.appendChild(iframe);
 
   // Listen for messages from the iframe
@@ -377,7 +377,7 @@ const showLoadingPopup = () => {
 
   const logoDiv = document.createElement("div");
   const logoImg = document.createElement("img");
-  logoImg.src = chrome.runtime.getURL("/public/32.png");
+  logoImg.src = "./chrome-extension/public/32.png";
   logoImg.width = 20;
   logoImg.height = 20;
   logoDiv.appendChild(logoImg);
@@ -463,7 +463,7 @@ const showTranslation = (translatedText: string, originalText: string) => {
 
   const logoDiv = document.createElement("div");
   const logoImg = document.createElement("img");
-  logoImg.src = chrome.runtime.getURL("/public/32.png");
+  logoImg.src = "./chrome-extension/public/32.png";
   logoImg.width = 20;
   logoImg.height = 20;
   logoDiv.appendChild(logoImg);
@@ -589,7 +589,7 @@ const showError = (errorMessage: string) => {
 
   const logoDiv = document.createElement("div");
   const logoImg = document.createElement("img");
-  logoImg.src = chrome.runtime.getURL("/public/32.png");
+  logoImg.src = "./chrome-extension/public/32.png";
   logoImg.width = 20;
   logoImg.height = 20;
   logoDiv.appendChild(logoImg);
