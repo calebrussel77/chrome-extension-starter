@@ -224,15 +224,21 @@ const createOrUpdatePopup = () => {
     zIndex: "9999",
     backgroundColor: "white",
     borderRadius: "12px",
-    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
+    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
     padding: "16px",
-    maxWidth: "350px",
+    minWidth: "300px",
+    maxWidth: "380px",
+    minHeight: "150px",
+    maxHeight: "350px",
+    overflowY: "auto",
     fontSize: "14px",
     lineHeight: "1.6",
     color: "#333",
     transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-    border: "1px solid rgba(0, 0, 0, 0.05)",
+    border: "1px solid rgba(0, 0, 0, 0.08)",
     backdropFilter: "blur(10px)",
+    fontFamily:
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
   });
 
   // Position the popup near the selection
@@ -336,6 +342,7 @@ const addStyles = () => {
         cursor: pointer;
         transition: all 0.2s ease;
         border: none;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       }
       
       .ai-translator-btn-primary {
@@ -344,7 +351,7 @@ const addStyles = () => {
       }
       
       .ai-translator-btn-primary:hover {
-        background-color: #2563eb;
+        background-color: #4338ca;
       }
       
       .ai-translator-btn-secondary {
@@ -354,6 +361,10 @@ const addStyles = () => {
       
       .ai-translator-btn-secondary:hover {
         background-color: #e5e7eb;
+      }
+
+      .ai-translator-popup {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       }
     `;
     document.head.appendChild(style);
@@ -368,6 +379,8 @@ const showLoadingPopup = () => {
   // Create loading container
   const loadingContainer = document.createElement("div");
   loadingContainer.style.padding = "8px 4px";
+  loadingContainer.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
   // Create logo and title
   const headerDiv = document.createElement("div");
@@ -387,6 +400,8 @@ const showLoadingPopup = () => {
   titleDiv.style.marginLeft = "8px";
   titleDiv.style.fontWeight = "600";
   titleDiv.style.color = "#4f46e5";
+  titleDiv.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
   headerDiv.appendChild(logoDiv);
   headerDiv.appendChild(titleDiv);
@@ -409,6 +424,8 @@ const showLoadingPopup = () => {
   loadingText.style.display = "flex";
   loadingText.style.alignItems = "center";
   loadingText.style.justifyContent = "center";
+  loadingText.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
   // Add spinner
   const spinner = document.createElement("div");
@@ -473,6 +490,8 @@ const showTranslation = (translatedText: string, originalText: string) => {
   titleDiv.style.marginLeft = "8px";
   titleDiv.style.fontWeight = "600";
   titleDiv.style.color = "#4f46e5";
+  titleDiv.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
   headerDiv.appendChild(logoDiv);
   headerDiv.appendChild(titleDiv);
@@ -488,6 +507,8 @@ const showTranslation = (translatedText: string, originalText: string) => {
   originalDiv.style.fontSize = "13px";
   originalDiv.style.marginBottom = "12px";
   originalDiv.style.border = "1px solid #f3f4f6";
+  originalDiv.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
   content.appendChild(originalDiv);
 
   // Add translated text
@@ -500,6 +521,8 @@ const showTranslation = (translatedText: string, originalText: string) => {
   translatedDiv.style.fontSize = "14px";
   translatedDiv.style.fontWeight = "500";
   translatedDiv.style.border = "1px solid #e0f2fe";
+  translatedDiv.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
   content.appendChild(translatedDiv);
 
   // Add action buttons
@@ -580,6 +603,8 @@ const showError = (errorMessage: string) => {
   // Create error content
   const errorDiv = document.createElement("div");
   errorDiv.style.padding = "8px 4px";
+  errorDiv.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
   // Create logo and title
   const headerDiv = document.createElement("div");
@@ -599,6 +624,8 @@ const showError = (errorMessage: string) => {
   titleDiv.style.marginLeft = "8px";
   titleDiv.style.fontWeight = "600";
   titleDiv.style.color = "#4f46e5";
+  titleDiv.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
   headerDiv.appendChild(logoDiv);
   headerDiv.appendChild(titleDiv);
@@ -612,6 +639,8 @@ const showError = (errorMessage: string) => {
   alertDiv.style.backgroundColor = "#fef2f2";
   alertDiv.style.borderRadius = "8px";
   alertDiv.style.border = "1px solid #fee2e2";
+  alertDiv.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
   // Add error icon
   const errorIcon = document.createElement("div");
@@ -628,11 +657,15 @@ const showError = (errorMessage: string) => {
   errorTitle.style.fontWeight = "600";
   errorTitle.style.color = "#b91c1c";
   errorTitle.style.marginBottom = "4px";
+  errorTitle.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
   const errorText = document.createElement("div");
   errorText.textContent = errorMessage;
   errorText.style.color = "#ef4444";
   errorText.style.fontSize = "13px";
+  errorText.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
   messageContainer.appendChild(errorTitle);
   messageContainer.appendChild(errorText);

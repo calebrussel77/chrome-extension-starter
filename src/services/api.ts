@@ -39,7 +39,7 @@ export const translateText = async (
       messages: [
         {
           role: "system",
-          content: `You are a professional translator. ${sourcePrompt} to ${targetLanguage}. Only respond with the translated text, nothing else.`,
+          content: `You are a professional translator. ${sourcePrompt} to ${targetLanguage}. I am a Web Developer, so the text may contain technical terms in English that should not be translated (like programming language keywords, function names, variable names, etc.). Only respond with the translated text, nothing else.`,
         },
         {
           role: "user",

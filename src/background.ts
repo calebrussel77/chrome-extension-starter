@@ -272,6 +272,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const { config } = message as UpdateConfigMessage;
         await updateConfig(config);
         sendResponse({ success: true });
+      } else if (message.type === MessageType.GET_CONFIG) {
+        // Handle GET_CONFIG message by getting and returning the config
+        const config = await getConfig();
+        sendResponse(config);
+        return;
       } else if (message.type === "CAPTURE_TAB_AUDIO") {
         if (sender.tab?.id) {
           try {
