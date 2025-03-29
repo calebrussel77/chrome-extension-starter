@@ -1,94 +1,115 @@
-# Chrome Extension Starter with Vite, React, TypeScript, and Tailwind CSS
-This project is a starter template for building modern Chrome extensions using Vite, React, TypeScript, and Tailwind CSS. It simplifies the setup so you can focus on building your extension's features.
+# AI Translator Pro - Chrome Extension
 
-<div style="display: flex; justify-content: space-around">
-  <img src="https://github.com/user-attachments/assets/b2267b19-1618-4797-8e0e-a241697b92cf" alt="image 1" width="200"/>
-  <img src="https://github.com/user-attachments/assets/eb6304c9-afd7-4bfc-b9ce-8099531a66d9" alt="image 2" width="200"/>
-  <img src="https://github.com/user-attachments/assets/7808d29d-d1ca-4287-b82b-183ad7b6510a" alt="image 3" width="200"/>
-  <img src="https://github.com/user-attachments/assets/c2f328e2-f7d6-4e6d-a3ec-8e750625e0f8" alt="image 4" width="200"/>
-</div>
+AI Translator Pro is a powerful Chrome extension that uses OpenAI's GPT-4o model to provide:
 
-## View tutorial on YouTube
- <a href="https://www.youtube.com/watch?v=jwDErziR1nE">
-    <img src="http://i.ytimg.com/vi/jwDErziR1nE/hqdefault.jpg" alt="YouTube video" width="200"/>
-  </a>
+- Text translation with automatic language detection
+- Voice-to-text functionality
+- Copy generated text with one click
+- Site-specific activation controls
+- Modern, animated UI with loading states and error handling
 
 ## Features
-- **Fast reloading** develop UI faster, view the popup and options page
-- **Vite** for fast bundling and development
-- **React** for building interactive UI components
-- **TypeScript** for type-safe JavaScript development
-- **Tailwind CSS** for easy and responsive styling
-- **chrome-types** Chrome's API TS files for auto-completion 
+
+- **Text Selection Translation**: Automatically detect and translate selected text on web pages
+- **Voice-to-Text**: Convert speech to text using your microphone
+- **Language Support**: Supports 30+ languages with automatic detection
+- **OpenAI Integration**: Leverages GPT-4o for high-quality translations
+- **Site Control**: Enable/disable the extension on specific websites
+- **Modern UI**: Sleek interface with animations and loading states
+- **Error Handling**: Graceful handling of errors and loading states
 
 ## Installation
 
-### Clone this repository:
-```
-git clone https://github.com/omribarmats/chrome-extension-starter.git new-project
-```
-* Replace `new-project` with your project name
+### Development Setup
 
-### Open the new directory:
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/ai-translator-pro.git
+cd ai-translator-pro
 ```
-cd new-project
-```
-### Install dependencies:
-```
+
+2. Install dependencies:
+```bash
 npm install
 ```
-### Start the development server:
-```
+
+3. Development mode:
+```bash
 npm run dev
 ```
-## Load the Extension
 
-1. Run the build command: `npm run build.`
-2. Go to `chrome://extensions/` in your Chrome browser.
-3. Enable `Developer mode`.
-4. Click `Load unpacked` and select the `dist` folder from the project.
-
-## Development
-- Hot-reload enabled for easier development.
-- Modify your code in the src folder.
-- Tailwind CSS is already configured and ready to use.
-- Run `nmp run build` to implement changes to `dist` folder
-- Go on `chrome://extensions/` and click refresh `⟳`
-
-### How to change the popup? 
-- Go on `src/chrome-extension/popup/index.tsx`
-- Once changes are made open the terminal and run `nmp run build` then visit `chrome://extensions/` and click the refresh `⟳` button on your extension
-
-### How to change the options page? 
-- Go on `src/chrome-extension/options/index.tsx`
-- Once changes are made open the terminal and run `nmp run build` then visit `chrome://extensions/` and click the refresh `⟳` button on your extension
-
-- ### How to add a background script? 
-- Create a `background.ts` file inside the `src` folder
-- Go on `vite.config.ts` and add this line `background: resolve(__dirname, "src/background.ts"),` under `build.rollupOptions.input`
-- For example 
+4. Build the extension:
+```bash
+npm run build
 ```
- build: {
-    rollupOptions: {
-      input: {
-        popup: resolve(__dirname, "popup.html"),
-        options: resolve(__dirname, "options.html"),
-        background: resolve(__dirname, "src/background.ts"),
-      },
-      output: {
-        entryFileNames: "[name].js",
-      },
-    },
-  },
-```
-- Go on `manifest.json` and add this code:
-```
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
-  }
-``` 
-- Open the terminal and run `nmp run build` then visit `chrome://extensions/` and click the refresh `⟳` button on your extension
 
-## Contributing
-Feel free to fork the project and make improvements or submit bug reports or issues.
+### Loading the Extension in Chrome
+
+1. Build the extension using `npm run build` to generate the `dist` folder
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top-right corner
+4. Click "Load unpacked" and select the `dist` folder
+5. The extension should now be installed and visible in your Chrome toolbar
+
+## Configuration
+
+1. Click on the extension icon in the Chrome toolbar
+2. For first-time use, click the settings icon and enter your OpenAI API key
+3. Configure your preferred source and target languages
+4. Toggle auto-translate and animation settings as desired
+
+## Usage
+
+### Text Translation
+
+1. Select text on any web page
+2. The extension will automatically translate the selected text (if auto-translate is enabled)
+3. Alternatively, right-click and select "Translate selection" from the context menu
+4. The translated text will appear in a popup near the selected text
+
+### Voice to Text
+
+1. Click the extension icon to open the popup
+2. Switch to the "Voice to Text" tab
+3. Click the microphone button and speak
+4. Your speech will be transcribed and translated (if auto-translate is enabled)
+
+### Site Management
+
+1. To disable the extension on specific sites, go to the extension options
+2. Add domains to the disabled sites list
+3. You can also toggle the extension on/off for the current site directly from the popup
+
+## API Key
+
+This extension requires an OpenAI API key to function. You can obtain a key by:
+
+1. Creating an account at [OpenAI Platform](https://platform.openai.com/)
+2. Navigating to the API keys section
+3. Generating a new API key
+4. Entering the key in the extension options
+
+**Note**: Your API key is stored locally in Chrome's secure storage and is never sent to any server other than OpenAI's API endpoints.
+
+## Privacy
+
+- The extension only accesses the text you explicitly select on web pages
+- All translation happens via direct API calls to OpenAI
+- No data is stored on external servers
+- Your API key is stored securely in Chrome's local storage
+
+## Troubleshooting
+
+- **Extension not working**: Check that you have entered a valid OpenAI API key
+- **Translation errors**: Ensure your API key has sufficient quota and permissions
+- **Microphone not working**: Check your browser permissions for microphone access
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Credits
+
+- OpenAI for providing the GPT-4o API
+- Chrome Extensions API
+- React, TypeScript, and Tailwind CSS for the UI

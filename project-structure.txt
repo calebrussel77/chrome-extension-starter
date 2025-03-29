@@ -1,0 +1,34 @@
+📁 chrome-extension-starter/
+├── 📁 src/
+│   ├── 📁 chrome-extension/
+│   │   ├── 📁 public/                 # Dossier contenant les icônes de l'extension
+│   │   │   ├── 16.png                 # Icône 16x16
+│   │   │   ├── 32.png                 # Icône 32x32
+│   │   │   ├── 48.png                 # Icône 48x48
+│   │   │   └── 192.png                # Icône 192x192
+│   │   ├── 📁 popup/
+│   │   │   └── index.tsx              # Composant React pour la popup de l'extension
+│   │   ├── 📁 options/
+│   │   │   └── index.tsx              # Composant React pour la page d'options
+│   │   ├── global.css                 # Styles globaux (Tailwind + styles de base)
+│   │   └── manifest.json              # Manifeste de l'extension Chrome
+│   ├── main.tsx                       # Point d'entrée pour la popup
+│   ├── optionsLocal.tsx               # Point d'entrée pour la page d'options en mode dev
+│   └── vite-env.d.ts                  # Déclarations de types pour Vite
+├── 📁 public/                         # Assets publics
+├── popup.html                         # Template HTML pour la popup
+├── popup-local.html                   # Template HTML pour la popup en mode dev
+├── options.html                       # Template HTML pour la page d'options
+├── options-local.html                 # Template HTML pour les options en mode dev
+├── local.css                          # Styles pour le mode développement
+├── popup-local.css                    # Styles spécifiques pour la popup en mode dev
+├── options-local.css                  # Styles spécifiques pour les options en mode dev
+├── vite.config.ts                     # Configuration de Vite
+├── tailwind.config.js                 # Configuration de Tailwind CSS
+├── postcss.config.js                  # Configuration de PostCSS
+├── tsconfig.json                      # Configuration principale TypeScript
+├── tsconfig.app.json                  # Configuration TypeScript pour l'application
+├── tsconfig.node.json                 # Configuration TypeScript pour Node
+├── package.json                       # Dépendances et scripts npm
+├── eslint.config.js                   # Configuration ESLint
+└── README.md                          # Documentation du projet

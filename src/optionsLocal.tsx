@@ -1,12 +1,9 @@
-import { StrictMode } from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
-import Options from "./chrome-extension/options/index";
-import "./chrome-extension/global.css";
+import Options from "./chrome-extension/options";
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <div className="bg-white w-full h-[1000px]">
-      <Options />
-    </div>
-  </StrictMode>
+  <React.StrictMode>
+    <Options />
+  </React.StrictMode>
 );
