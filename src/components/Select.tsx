@@ -1,5 +1,6 @@
 import { ChevronDownIcon } from "lucide-react";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+
 interface Option {
   value: string;
   label: string;
@@ -28,13 +29,38 @@ const Select: React.FC<SelectProps> = ({
   description,
   ...props
 }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange(e.target.value);
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef<HTMLDivElement>(null);
+
+  // Find the current selected option label
+  const selectedOptionLabel =
+    options.find((option) => option.value === value)?.label || "";
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        selectRef.current &&
+        !selectRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleSelectOption = (optionValue: string) => {
+    onChange(optionValue);
+    setIsOpen(false);
   };
 
   // Base classes
   const baseClasses =
-    "block rounded-md border px-3 py-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100 appearance-none pr-10";
+    "block rounded-md border px-3 py-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100 cursor-pointer";
 
   // Width classes
   const widthClasses = fullWidth ? "w-full" : "";
@@ -62,11 +88,50 @@ const Select: React.FC<SelectProps> = ({
         <p className="text-xs text-gray-500 mb-1">{description}</p>
       )}
 
-      <div className="relative">
+      <div className="relative" ref={selectRef}>
+        {/* Custom select trigger */}
+        <div
+          className={combinedClasses}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+        >
+          <div className="flex justify-between items-center">
+            <span>{selectedOptionLabel}</span>
+            <ChevronDownIcon
+              className={`h-5 w-5 text-gray-400 transition-transform ${
+                isOpen ? "transform rotate-180" : ""
+              }`}
+              aria-hidden="true"
+            />
+          </div>
+        </div>
+
+        {/* Custom dropdown */}
+        {isOpen && (
+          <div
+            className="absolute mt-1 w-full rounded-md bg-white shadow-lg z-50 border border-gray-200 max-h-60 overflow-auto"
+            style={{ zIndex: 9999 }}
+          >
+            <ul className="py-1">
+              {options.map((option) => (
+                <li
+                  key={option.value}
+                  className={`px-3 py-2 text-sm hover:bg-blue-50 cursor-pointer ${
+                    option.value === value ? "bg-blue-100 font-medium" : ""
+                  }`}
+                  onClick={() => handleSelectOption(option.value)}
+                >
+                  {option.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Hidden native select for form submission if needed */}
         <select
           value={value}
-          onChange={handleChange}
-          className={combinedClasses}
+          onChange={(e) => onChange(e.target.value)}
+          className="sr-only"
           disabled={disabled}
           {...props}
         >
@@ -76,13 +141,6 @@ const Select: React.FC<SelectProps> = ({
             </option>
           ))}
         </select>
-
-        <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-          <ChevronDownIcon
-            className="h-5 w-5 text-gray-400"
-            aria-hidden="true"
-          />
-        </div>
       </div>
 
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
