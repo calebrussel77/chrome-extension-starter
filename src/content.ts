@@ -127,6 +127,11 @@ const init = async () => {
         sendResponse({ success: true });
       } else if (message.type === "PING") {
         sendResponse({ status: "Content script is active" });
+      } else if (message.type === "SHOW_LOADING") {
+        selectedText = message.originalText;
+        isTranslating = true;
+        showLoadingPopup();
+        sendResponse({ success: true });
       }
 
       return true; // Keep the message channel open for async responses
@@ -465,6 +470,7 @@ const showLoadingPopup = () => {
 
 // Show translation result
 const showTranslation = (translatedText: string, originalText: string) => {
+  isTranslating = false;
   addStyles();
   const popup = createOrUpdatePopup();
 

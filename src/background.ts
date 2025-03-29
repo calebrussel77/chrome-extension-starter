@@ -89,6 +89,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         await injectContentScript(tab.id);
       }
 
+      // First, show loading popup
+      await sendMessageToTab(tab.id, {
+        type: "SHOW_LOADING",
+        originalText: info.selectionText,
+      });
+
       const result = await translateText(
         info.selectionText,
         config.sourceLanguage,
