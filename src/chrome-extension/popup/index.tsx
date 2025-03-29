@@ -4,6 +4,8 @@ import {
   AlertTriangle,
   ArrowLeftRight,
   Copy,
+  Globe,
+  History,
   Info,
   Mic,
   Settings,
@@ -333,7 +335,7 @@ const Popup: React.FC = () => {
   };
 
   return (
-    <div className="min-w-[450px] p-5 bg-white text-gray-900 shadow-sm rounded-lg">
+    <div className="min-w-[450px] min-h-[540px] p-5 bg-white text-gray-900 shadow-sm rounded-lg">
       <header className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <img
@@ -397,35 +399,38 @@ const Popup: React.FC = () => {
       {/* Tabs */}
       <div className="flex mb-5 border-b border-gray-200">
         <button
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 ${
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 flex items-center gap-2 ${
             activeTab === "translate"
               ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
               : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
           }`}
           onClick={() => setActiveTab("translate")}
         >
+          <Globe size={16} />
           Translate
         </button>
 
         <button
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 ${
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 flex items-center gap-2 ${
             activeTab === "voice"
               ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
               : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
           }`}
           onClick={() => setActiveTab("voice")}
         >
+          <Mic size={16} />
           Voice to Text
         </button>
 
         <button
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 ${
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 flex items-center gap-2 ${
             activeTab === "history"
               ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
               : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
           }`}
           onClick={() => setActiveTab("history")}
         >
+          <History size={16} />
           History
         </button>
       </div>
@@ -519,8 +524,8 @@ const Popup: React.FC = () => {
                 id="inputText"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
-                rows={3}
+                className="block w-full rounded-lg border px-3 py-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
+                rows={6}
                 placeholder="Enter text to translate..."
               />
             </div>

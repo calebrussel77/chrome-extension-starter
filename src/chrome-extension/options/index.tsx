@@ -131,7 +131,7 @@ const Options = () => {
 
         <div className="mb-4">
           <Input
-            label="Gemini API Key"
+            label="OpenAI API Key"
             value={apiKey}
             onChange={setApiKey}
             fullWidth
