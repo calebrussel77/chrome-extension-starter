@@ -17,10 +17,62 @@ import {
 // Keep track of tabs with content scripts loaded
 const contentScriptTabs = new Set<number>();
 
+// Send a message to a tab, with retries
+const sendMessageToTab = async (
+  tabId: number,
+  message: unknown,
+  maxRetries = 3
+) => {
+  return new Promise((resolve, reject) => {
+    const attemptSend = (retryCount: number) => {
+      chrome.tabs.sendMessage(tabId, message, (response) => {
+        if (chrome.runtime.lastError) {
+          if (retryCount < maxRetries) {
+            // Wait a bit and retry
+            setTimeout(() => attemptSend(retryCount + 1), 500);
+          } else {
+            reject(
+              new Error(
+                `Failed to send message after ${maxRetries} attempts: ${chrome.runtime.lastError.message}`
+              )
+            );
+          }
+        } else {
+          resolve(response);
+        }
+      });
+    };
+
+    attemptSend(0);
+  });
+};
+
+// Function to notify all content scripts about config changes
+const notifyContentScriptsConfigUpdated = async () => {
+  try {
+    const config = await getConfig();
+    const tabs = await chrome.tabs.query({});
+    
+    for (const tab of tabs) {
+      if (tab.id && contentScriptTabs.has(tab.id)) {
+        try {
+          await sendMessageToTab(tab.id, {
+            type: "CONFIG_UPDATED",
+            config: config,
+          });
+        } catch (error) {
+          // Content script might not be loaded, ignore error
+          console.error(`Could not notify tab ${tab.id} about config update:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error notifying content scripts about config update:", error);
+  }
+};
+
 // Initialize the extension when installed or updated
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("AI Translator Pro installed or updated");
-
   // Create context menu items
   chrome.contextMenus.create({
     id: "translateSelection",
@@ -48,12 +100,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         // If there's no error, the content script is loaded
         if (!chrome.runtime.lastError && response) {
           contentScriptTabs.add(tabId);
-          console.log(`Content script loaded in tab ${tabId}`);
-        } else {
-          // If there's an error, the content script might not be loaded
-          console.log(
-            `Content script not loaded in tab ${tabId} or error: ${chrome.runtime.lastError?.message}`
-          );
         }
       });
     }, 1000); // Give it a second to load
@@ -76,7 +122,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (tab.url) {
       const isDisabled = await isSiteDisabled(tab.url);
       if (isDisabled) {
-        console.log("Translation disabled for this site");
         return;
       }
     }
@@ -85,7 +130,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       // Check if the content script is loaded
       const isContentScriptLoaded = await isTabContentScriptLoaded(tab.id);
       if (!isContentScriptLoaded) {
-        console.log(`Content script not loaded in tab ${tab.id}, injecting...`);
         await injectContentScript(tab.id);
       }
 
@@ -99,7 +143,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         info.selectionText,
         config.sourceLanguage,
         config.targetLanguage,
-        config.apiKey
+        config.googleApiKey
       );
 
       // Add to history
@@ -148,40 +192,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     }
   }
 });
-
-// Send a message to a tab, with retries
-const sendMessageToTab = async (
-  tabId: number,
-  message: unknown,
-  maxRetries = 3
-) => {
-  return new Promise((resolve, reject) => {
-    const attemptSend = (retryCount: number) => {
-      chrome.tabs.sendMessage(tabId, message, (response) => {
-        if (chrome.runtime.lastError) {
-          console.log(
-            `Error sending message (attempt ${retryCount + 1}):`,
-            chrome.runtime.lastError
-          );
-          if (retryCount < maxRetries) {
-            // Wait a bit and retry
-            setTimeout(() => attemptSend(retryCount + 1), 500);
-          } else {
-            reject(
-              new Error(
-                `Failed to send message after ${maxRetries} attempts: ${chrome.runtime.lastError.message}`
-              )
-            );
-          }
-        } else {
-          resolve(response);
-        }
-      });
-    };
-
-    attemptSend(0);
-  });
-};
 
 // Check if a tab has the content script loaded
 const isTabContentScriptLoaded = async (tabId: number): Promise<boolean> => {
@@ -238,7 +248,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
 
       if (message.type === "CONTENT_SCRIPT_READY") {
-        console.log("Content script is ready in tab", sender.tab?.id);
         sendResponse({ status: "Background script acknowledged" });
         return;
       } else if (message.type === "PING") {
@@ -247,13 +256,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } else if (message.type === MessageType.TRANSLATE_SELECTION) {
         const { text, sourceLanguage, targetLanguage } =
           message as TranslateSelectionMessage;
+        
         const config = await getConfig();
-
         const result = await translateText(
           text,
           sourceLanguage,
           targetLanguage,
-          config.apiKey
+          config.googleApiKey
         );
 
         // Add to history
@@ -277,6 +286,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } else if (message.type === MessageType.UPDATE_CONFIG) {
         const { config } = message as UpdateConfigMessage;
         await updateConfig(config);
+
+        // Notify all content scripts about the config update
+        await notifyContentScriptsConfigUpdated();
+
         sendResponse({ success: true });
       } else if (message.type === MessageType.GET_CONFIG) {
         // Handle GET_CONFIG message by getting and returning the config

@@ -20,7 +20,8 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
   // Group history items by date
   const groupedHistory = history.reduce<Record<string, HistoryItem[]>>(
     (acc, item) => {
-      const date = new Date(item.timestamp).toLocaleDateString("fr-FR");
+      // Use "en-US" locale for date formatting
+      const date = new Date(item.timestamp).toLocaleDateString("en-US");
 
       if (!acc[date]) {
         acc[date] = [];
@@ -34,7 +35,8 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
 
   // Convert timestamp to time
   const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString("fr-FR", {
+    // Use "en-US" locale for time formatting
+    return new Date(timestamp).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -103,7 +105,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
               d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <p>Aucun historique pour le moment</p>
+          <p>No history yet</p>
         </div>
       ) : (
         <>
@@ -126,7 +128,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
                   d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
                 />
               </svg>
-              Effacer l'historique
+              Clear history
             </button>
           </div>
 
@@ -194,13 +196,13 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
                         >
                           <div className="text-xs text-gray-500 mb-1">
                             {item.type === "translation"
-                              ? `Traduit de ${item.sourceLanguage} vers ${item.targetLanguage}`
+                              ? `Translated from ${item.sourceLanguage} to ${item.targetLanguage}`
                               : "Transcription"}
                           </div>
 
                           <div className="mb-2">
                             <div className="text-xs font-medium text-gray-700 mb-1">
-                              Texte original :
+                              Original text:
                             </div>
                             <div className="p-2 bg-gray-50 rounded text-sm border border-gray-200">
                               {item.originalText}
@@ -210,8 +212,8 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
                           <div className="mb-2">
                             <div className="text-xs font-medium text-gray-700 mb-1">
                               {item.type === "translation"
-                                ? "Traduction :"
-                                : "Texte transcrit :"}
+                                ? "Translation:"
+                                : "Transcribed text:"}
                             </div>
                             <div className="p-2 bg-gray-50 rounded text-sm border border-gray-200">
                               {item.translatedText}
@@ -222,7 +224,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
                             <button
                               onClick={() => onCopyText(item.translatedText)}
                               className="text-xs text-blue-600 hover:text-blue-800 flex items-center"
-                              title="Copier"
+                              title="Copy"
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -238,12 +240,12 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
                                   d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"
                                 />
                               </svg>
-                              Copier
+                              Copy
                             </button>
                             <button
                               onClick={() => onDeleteHistoryItem(item.id)}
                               className="text-xs text-red-600 hover:text-red-800 flex items-center"
-                              title="Supprimer"
+                              title="Delete"
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -259,7 +261,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
                                   d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
                                 />
                               </svg>
-                              Supprimer
+                              Delete
                             </button>
                           </div>
                         </motion.div>

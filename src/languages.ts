@@ -3,7 +3,7 @@ import { Language } from "./types";
 // List of languages supported by our translator
 export const LANGUAGES: Language[] = [
   { code: "auto", name: "Auto-detect" },
-  { code: "en", name: "English" },
+  { code: "en", name: "American English" },
   { code: "fr", name: "French" },
   { code: "es", name: "Spanish" },
   { code: "de", name: "German" },
@@ -35,13 +35,14 @@ export const LANGUAGES: Language[] = [
 ];
 
 // Default configuration values
-// Default configuration values
 export const DEFAULT_CONFIG = {
-  apiKey: "",
+  googleApiKey: "",
+  openaiApiKey: "",
   disabledSites: [] as string[],
   sourceLanguage: "auto",
   targetLanguage: "en",
   autoTranslate: true,
   enableAnimations: true,
+  customInstructions: "",
   history: [],
 };

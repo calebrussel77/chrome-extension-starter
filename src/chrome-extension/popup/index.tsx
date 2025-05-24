@@ -3,23 +3,24 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowLeftRight,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Globe,
   History,
   Info,
   Mic,
-  MicOff,
   Settings,
-  Square,
 } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Button from "../../components/Button";
 import HistoryTab from "../../components/HistoryTab";
 import Select from "../../components/Select";
 import Toggle from "../../components/Toggle";
+import VoiceRecording from "../../components/VoiceRecording";
 import { LANGUAGES } from "../../languages";
-import { speechToText, translateText } from "../../services/api";
+import { translateText } from "../../services/api";
 import {
   addToHistory,
   clearHistory,
@@ -35,24 +36,22 @@ import "../../chrome-extension/global.css";
 
 const Popup: React.FC = () => {
   // State
-  const [apiKey, setApiKey] = useState("");
+  const [googleApiKey, setGoogleApiKey] = useState("");
+  const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [sourceLanguage, setSourceLanguage] = useState("auto");
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [inputText, setInputText] = useState("");
   const [translatedText, setTranslatedText] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState("");
   const [isAutoTranslate, setIsAutoTranslate] = useState(true);
   const [enableAnimations, setEnableAnimations] = useState(true);
+  const [customInstructions, setCustomInstructions] = useState("");
+  const [showCustomInstructions, setShowCustomInstructions] = useState(false);
   const [activeTab, setActiveTab] = useState<"translate" | "voice" | "history">(
     "translate"
   );
   const [history, setHistory] = useState<HistoryItem[]>([]);
-
-  // Refs
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
 
   // Add a microphone permission state
   const [microphonePermission, setMicrophonePermission] = useState<
@@ -64,11 +63,16 @@ const Popup: React.FC = () => {
     const loadConfig = async () => {
       try {
         const config = await getConfig();
-        setApiKey(config.apiKey);
+        setGoogleApiKey(config.googleApiKey);
+        setOpenaiApiKey(config.openaiApiKey);
         setSourceLanguage(config.sourceLanguage);
         setTargetLanguage(config.targetLanguage);
         setIsAutoTranslate(config.autoTranslate);
         setEnableAnimations(config.enableAnimations);
+        setCustomInstructions(config.customInstructions || "");
+        setShowCustomInstructions(
+          !!(config.customInstructions && config.customInstructions.trim())
+        );
 
         // Load history
         const historyItems = await getHistory();
@@ -91,11 +95,13 @@ const Popup: React.FC = () => {
     const saveConfig = async () => {
       try {
         await updateConfig({
-          apiKey,
+          googleApiKey,
+          openaiApiKey,
           sourceLanguage,
           targetLanguage,
           autoTranslate: isAutoTranslate,
           enableAnimations,
+          customInstructions,
         });
       } catch (err) {
         console.error("Error saving config:", err);
@@ -104,11 +110,13 @@ const Popup: React.FC = () => {
 
     saveConfig();
   }, [
-    apiKey,
+    googleApiKey,
+    openaiApiKey,
     sourceLanguage,
     targetLanguage,
     isAutoTranslate,
     enableAnimations,
+    customInstructions,
   ]);
 
   // Check if a site is disabled
@@ -179,8 +187,8 @@ const Popup: React.FC = () => {
 
   // Handle translation
   const handleTranslate = async () => {
-    if (!apiKey) {
-      setError("API key is required");
+    if (!googleApiKey) {
+      setError("Google API key is required");
       return;
     }
 
@@ -197,7 +205,8 @@ const Popup: React.FC = () => {
         inputText,
         sourceLanguage,
         targetLanguage,
-        apiKey
+        googleApiKey,
+        customInstructions
       );
 
       if (result.error) {
@@ -226,165 +235,10 @@ const Popup: React.FC = () => {
     }
   };
 
-  // Handle recording for speech to text
-  const startRecording = async () => {
-    setError("");
-
-    try {
-      // First check if the browser supports the API
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setError("Your browser does not support microphone access");
-        return;
-      }
-
-      // Try to get microphone permission directly
-      try {
-        console.log("Requesting microphone permission...");
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
-        });
-
-        // Permission granted, proceed with recording
-        console.log("Microphone permission granted, starting recording...");
-
-        // Create media recorder
-        const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: "audio/webm;codecs=opus",
-        });
-
-        mediaRecorderRef.current = mediaRecorder;
-        audioChunksRef.current = [];
-
-        mediaRecorder.ondataavailable = (event) => {
-          audioChunksRef.current.push(event.data);
-        };
-
-        mediaRecorder.onstop = async () => {
-          const audioBlob = new Blob(audioChunksRef.current, {
-            type: "audio/webm",
-          });
-
-          try {
-            setIsTranslating(true);
-            setError("");
-            const transcribedText = await speechToText(audioBlob, apiKey);
-            setInputText(transcribedText);
-
-            // Add to history as transcription
-            await addToHistory({
-              type: "transcription",
-              originalText: transcribedText,
-              translatedText: transcribedText,
-              sourceLanguage: "auto",
-              targetLanguage: "auto",
-            });
-
-            // Auto-translate if enabled
-            if (isAutoTranslate) {
-              const result = await translateText(
-                transcribedText,
-                sourceLanguage,
-                targetLanguage,
-                apiKey
-              );
-
-              if (result.error) {
-                setError(result.error);
-              } else {
-                setTranslatedText(result.translatedText);
-
-                // Add to history as translation
-                await addToHistory({
-                  type: "translation",
-                  originalText: transcribedText,
-                  translatedText: result.translatedText,
-                  sourceLanguage,
-                  targetLanguage,
-                });
-              }
-            }
-
-            // Refresh history
-            const historyItems = await getHistory();
-            setHistory(historyItems);
-          } catch (err) {
-            console.error("Speech to text error:", err);
-            setError(err instanceof Error ? err.message : "An error occurred");
-          } finally {
-            setIsTranslating(false);
-          }
-
-          // Stop all tracks
-          stream.getTracks().forEach((track) => track.stop());
-        };
-
-        // Set permission as granted for future use
-        await setMicrophonePermission(true);
-        setMicrophonePermission(true);
-
-        // Start recording
-        mediaRecorder.start();
-        setIsRecording(true);
-      } catch (error) {
-        console.error("Error accessing microphone:", error);
-        if (error instanceof Error) {
-          if (error.name === "NotAllowedError") {
-            setError(
-              "Microphone access denied. Please check your browser settings."
-            );
-            setMicrophonePermission(false);
-            await setMicrophonePermission(false);
-          } else if (error.name === "NotFoundError") {
-            setError("No microphone was found on your device.");
-          } else {
-            setError(`Microphone access error: ${error.message}`);
-          }
-        } else {
-          setError("Failed to access microphone for an unknown reason");
-        }
-      }
-    } catch (err) {
-      handleRecordingError(err);
-    }
-  };
-
-  // Function to handle recording errors
-  const handleRecordingError = (err: Error | unknown) => {
-    console.error("Error starting recording:", err);
-
-    // Provide more detailed error messages based on error type
-    if (err instanceof Error) {
-      console.log("Error name:", err.name);
-      console.log("Error message:", err.message);
-
-      if (err.name === "NotAllowedError") {
-        setError(
-          "Microphone access denied. Please check your browser settings."
-        );
-      } else if (err.name === "NotFoundError") {
-        setError("No microphone was found on your device.");
-      } else if (err.name === "NotReadableError") {
-        setError(
-          "Unable to access the microphone. It may be in use by another application."
-        );
-      } else {
-        setError(`Microphone access error: ${err.message}`);
-      }
-    } else {
-      setError("Failed to access microphone for an unknown reason");
-    }
-  };
-
   // History management functions
   const handleClearHistory = async () => {
-    if (confirm("Are you sure you want to clear all history?")) {
-      await clearHistory();
-      setHistory([]);
-    }
+    await clearHistory();
+    setHistory([]);
   };
 
   const handleDeleteHistoryItem = async (id: string) => {
@@ -398,16 +252,6 @@ const Popup: React.FC = () => {
       console.error("Failed to copy text:", err);
       setError("Failed to copy to clipboard");
     });
-  };
-
-  const stopRecording = () => {
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== "inactive"
-    ) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
   };
 
   // Copy translated text to clipboard
@@ -447,7 +291,7 @@ const Popup: React.FC = () => {
       </header>
 
       {/* API Key Warning */}
-      {!apiKey && (
+      {(!googleApiKey || !openaiApiKey) && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -457,7 +301,11 @@ const Popup: React.FC = () => {
             <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
             <div className="ml-3">
               <p className="text-sm text-amber-800">
-                Please configure your OpenAI API key in the settings.
+                Please configure your API keys in the settings.
+                {!googleApiKey &&
+                  " Google API key is required for translation."}
+                {!openaiApiKey &&
+                  " OpenAI API key is required for voice features."}
               </p>
             </div>
           </div>
@@ -481,34 +329,6 @@ const Popup: React.FC = () => {
             label={isSiteDisabled ? "Enable" : "Disable"}
           />
         </div>
-      )}
-
-      {/* Microphone Permission Warning */}
-      {activeTab === "voice" && microphonePermission === false && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 shadow-sm"
-        >
-          <div className="flex items-start">
-            <MicOff className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div className="ml-3">
-              <p className="text-sm text-amber-800">
-                Microphone access is required for voice recording. Please allow
-                microphone access in the{" "}
-                <a
-                  href="options.html"
-                  className="font-medium text-amber-900 hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  extension settings
-                </a>
-                .
-              </p>
-            </div>
-          </div>
-        </motion.div>
       )}
 
       {/* Tabs */}
@@ -627,6 +447,63 @@ const Popup: React.FC = () => {
             exit={{ opacity: 0, x: -10 }}
             transition={{ duration: 0.2 }}
           >
+            {/* Custom Instructions */}
+            <div className="mb-5">
+              <button
+                onClick={() =>
+                  setShowCustomInstructions(!showCustomInstructions)
+                }
+                className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-100 transition-colors duration-200"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-medium text-gray-700">
+                    Custom Instructions
+                  </div>
+                  {customInstructions && (
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  )}
+                </div>
+                {showCustomInstructions ? (
+                  <ChevronUp size={16} className="text-gray-500" />
+                ) : (
+                  <ChevronDown size={16} className="text-gray-500" />
+                )}
+              </button>
+
+              <AnimatePresence>
+                {showCustomInstructions && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <label
+                        htmlFor="customInstructions"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Additional context for translation
+                      </label>
+                      <textarea
+                        id="customInstructions"
+                        value={customInstructions}
+                        onChange={(e) => setCustomInstructions(e.target.value)}
+                        className="block w-full rounded-lg border px-3 py-2 border-blue-200 bg-white shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200 text-sm"
+                        rows={3}
+                        placeholder="e.g., 'This is a technical document about software development' or 'Translate in a formal tone' or 'Keep brand names untranslated'..."
+                      />
+                      <p className="text-xs text-gray-600 mt-2">
+                        💡 Provide context, tone preferences, or specific
+                        instructions to improve translation quality.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* Input Text */}
             <div className="mb-5">
               <label
@@ -653,7 +530,7 @@ const Popup: React.FC = () => {
                 fullWidth
                 isLoading={isTranslating}
                 onClick={handleTranslate}
-                disabled={!apiKey || !inputText}
+                disabled={!googleApiKey || !inputText}
                 className="rounded-lg shadow-sm hover:shadow transition-all duration-200"
               >
                 Translate
@@ -694,77 +571,21 @@ const Popup: React.FC = () => {
             exit={{ opacity: 0, x: 10 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="flex flex-col items-center mb-5">
-              <p className="text-sm text-gray-600 mb-4">
-                Press the button to start voice recording
-              </p>
-
-              <Button
-                variant={isRecording ? "secondary" : "primary"}
-                size="lg"
-                onClick={isRecording ? stopRecording : startRecording}
-                isLoading={isTranslating}
-                disabled={!apiKey || microphonePermission === false}
-                className={`rounded-full p-5 shadow-md hover:shadow-lg transition-all duration-200 ${
-                  isRecording ? "bg-red-100 hover:bg-red-200" : ""
-                }`}
-              >
-                {isRecording ? (
-                  <Square size={32} className="text-red-600" />
-                ) : (
-                  <Mic size={32} />
-                )}
-              </Button>
-
-              <p className="text-sm font-medium mt-3">
-                {isRecording ? (
-                  <span className="flex items-center gap-2 text-red-600">
-                    <span className="animate-pulse">●</span> Recording in
-                    progress...
-                  </span>
-                ) : microphonePermission === false ? (
-                  "Microphone access required"
-                ) : (
-                  "Ready to record"
-                )}
-              </p>
-            </div>
-
-            {/* Input Text */}
-            {inputText && (
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Transcribed text
-                  </label>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-                  <p className="text-sm">{inputText}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Translation Result */}
-            {translatedText && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Translation
-                  </label>
-
-                  <button
-                    onClick={copyToClipboard}
-                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
-                    title="Copy"
-                  >
-                    <Copy size={16} />
-                  </button>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-                  <p className="text-sm">{translatedText}</p>
-                </div>
-              </div>
-            )}
+            <VoiceRecording
+              googleApiKey={googleApiKey}
+              openaiApiKey={openaiApiKey}
+              sourceLanguage={sourceLanguage}
+              targetLanguage={targetLanguage}
+              isAutoTranslate={isAutoTranslate}
+              microphonePermission={microphonePermission}
+              customInstructions={customInstructions}
+              onError={setError}
+              onInputTextChange={setInputText}
+              onTranslatedTextChange={setTranslatedText}
+              onHistoryUpdate={setHistory}
+              inputText={inputText}
+              translatedText={translatedText}
+            />
           </motion.div>
         ) : (
           <motion.div

@@ -1,32 +1,15 @@
+// Import the type at the top of the file
+import { ExtensionConfig } from "./types";
+
 // State management
 let isTranslating = false;
 let isExtensionDisabled = false;
 let selectedText = "";
 let translationPopup: HTMLDivElement | null = null;
-
-// Log that the content script has loaded
-console.log("AI Translator Pro: Content script loaded");
-
-// Function to check if microphone permission is already granted
-const checkMicrophonePermission = async (): Promise<boolean> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(["microphonePermission"], (result) => {
-      resolve(result.microphonePermission === true);
-    });
-  });
-};
+let config: ExtensionConfig | null = null; // Store the config
 
 // Function to inject the microphone permission iframe
 const injectMicrophonePermissionIframe = async () => {
-  // Check if permission is already granted
-  const hasPermission = await checkMicrophonePermission();
-  if (hasPermission) {
-    console.log(
-      "Microphone permission already granted, no need to inject iframe"
-    );
-    return;
-  }
-
   // Inject iframe only if permission is not yet granted
   const iframe = document.createElement("iframe");
   iframe.setAttribute("hidden", "hidden");
@@ -44,34 +27,16 @@ const injectMicrophonePermissionIframe = async () => {
   });
 };
 
-// Function to notify the background script that the content script is ready
-const notifyBackgroundScriptReady = () => {
-  chrome.runtime.sendMessage({ type: "CONTENT_SCRIPT_READY" }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.warn(
-        "Error notifying background script:",
-        chrome.runtime.lastError
-      );
-      return;
-    }
-    console.log("Background script notified:", response);
-  });
-};
-
 // Initialize the content script
 const init = async () => {
   try {
     // Inject microphone permission iframe
     await injectMicrophonePermissionIframe();
 
-    // Check if the extension is disabled for this site
-    const hostname = window.location.hostname;
-
     // Send a message to the background script to check if it's running
     const checkConnection = async () => {
       try {
-        const response = await chrome.runtime.sendMessage({ type: "PING" });
-        console.log("Extension connection established:", response);
+        await chrome.runtime.sendMessage({ type: "PING" });
       } catch (error) {
         console.warn(
           "Could not establish connection to extension background script:",
@@ -83,20 +48,17 @@ const init = async () => {
     // Check background connection
     await checkConnection();
 
-    // Get config
-    chrome.runtime.sendMessage({ type: "GET_CONFIG" }, (config) => {
+    // Get config and store it
+    chrome.runtime.sendMessage({ type: "GET_CONFIG" }, (response) => {
       if (chrome.runtime.lastError) {
         console.warn("Error getting config:", chrome.runtime.lastError);
         return;
       }
 
-      if (config && config.disabledSites) {
-        isExtensionDisabled = config.disabledSites.includes(hostname);
-        console.log(
-          `Extension ${
-            isExtensionDisabled ? "disabled" : "enabled"
-          } for site: ${hostname}`
-        );
+      if (response) {
+        config = response;
+      } else {
+        console.warn("No config response received from background script");
       }
     });
 
@@ -105,8 +67,6 @@ const init = async () => {
 
     // Listen for messages from the popup and background script
     chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
-      console.log("Content script received message:", message);
-
       if (message.type === "SHOW_TRANSLATION") {
         if (message.error) {
           showError(message.error);
@@ -132,15 +92,14 @@ const init = async () => {
         isTranslating = true;
         showLoadingPopup();
         sendResponse({ success: true });
+      } else if (message.type === "CONFIG_UPDATED") {
+        // Update config when it changes
+        config = message.config;
+        sendResponse({ success: true });
       }
 
       return true; // Keep the message channel open for async responses
     });
-
-    // Notify the background script that we're ready
-    notifyBackgroundScriptReady();
-
-    console.log("AI Translator Pro content script initialized");
   } catch (error) {
     console.error("Error initializing content script:", error);
   }
@@ -156,54 +115,61 @@ const handleTextSelection = async () => {
   if (text && text !== selectedText) {
     selectedText = text;
 
-    // Check if auto-translate is enabled
-    chrome.runtime.sendMessage({ type: "GET_CONFIG" }, (config) => {
-      if (chrome.runtime.lastError) {
-        console.warn("Error getting config:", chrome.runtime.lastError);
-        return;
-      }
+    // Check if we have config and auto-translate is enabled
+    if (config && config.autoTranslate && config.googleApiKey) {
+      isTranslating = true;
+      showLoadingPopup();
 
-      if (config && config.autoTranslate && config.apiKey) {
-        isTranslating = true;
-        showLoadingPopup();
-
-        try {
-          // Send message to background script to translate
-          chrome.runtime.sendMessage(
-            {
-              type: "TRANSLATE_SELECTION",
-              text,
-              sourceLanguage: config.sourceLanguage,
-              targetLanguage: config.targetLanguage,
-            },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                console.warn(
-                  "Error sending translate request:",
-                  chrome.runtime.lastError
-                );
-                showError(
-                  "Failed to communicate with the extension. Please try again."
-                );
-                isTranslating = false;
-                return;
-              }
-
+      try {
+        // Send message to background script to translate
+        chrome.runtime.sendMessage(
+          {
+            type: "TRANSLATE_SELECTION",
+            text,
+            sourceLanguage: config.sourceLanguage,
+            targetLanguage: config.targetLanguage,
+          },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              console.warn(
+                "Error sending translate request:",
+                chrome.runtime.lastError
+              );
+              showError(
+                "Failed to communicate with the extension. Please try again."
+              );
               isTranslating = false;
-
-              if (response.error) {
-                showError(response.error);
-              } else {
-                showTranslation(response.translatedText, text);
-              }
+              return;
             }
-          );
-        } catch (error) {
-          isTranslating = false;
-          showError(error instanceof Error ? error.message : "Unknown error");
-        }
+
+            isTranslating = false;
+
+            if (response.error) {
+              showError(response.error);
+            } else {
+              showTranslation(response.translatedText, text);
+            }
+          }
+        );
+      } catch (error) {
+        isTranslating = false;
+        showError(error instanceof Error ? error.message : "Unknown error");
       }
-    });
+    } else if (!config) {
+      // If config is not loaded yet, try to get it again
+      chrome.runtime.sendMessage({ type: "GET_CONFIG" }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.warn("Error getting config:", chrome.runtime.lastError);
+          return;
+        }
+
+        if (response) {
+          config = response;
+          // Retry the translation with the new config
+          handleTextSelection();
+        }
+      });
+    }
   } else if (!text && translationPopup) {
     // Remove translation popup when selection is cleared
     translationPopup.remove();
@@ -740,5 +706,3 @@ window.addEventListener("message", (event) => {
     window.postMessage({ type: "AI_TRANSLATOR_RESPONSE", loaded: true }, "*");
   }
 });
-
-console.log("AI Translator Pro: Content script execution completed");

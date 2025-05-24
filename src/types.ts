@@ -2,12 +2,14 @@
 
 // Configuration stored in chrome.storage
 export type ExtensionConfig = {
-  apiKey: string;
+  googleApiKey: string;
+  openaiApiKey: string;
   disabledSites: string[];
   sourceLanguage: string;
   targetLanguage: string;
   autoTranslate: boolean;
   enableAnimations: boolean;
+  customInstructions: string;
   history: HistoryItem[];
 };
 
@@ -42,6 +44,7 @@ export enum MessageType {
   GET_SITE_STATUS = "GET_SITE_STATUS",
   UPDATE_CONFIG = "UPDATE_CONFIG",
   GET_CONFIG = "GET_CONFIG",
+  CONFIG_UPDATED = "CONFIG_UPDATED",
   PING = "PING",
   CONTENT_SCRIPT_READY = "CONTENT_SCRIPT_READY",
 }
@@ -85,4 +88,10 @@ export interface GetConfigMessage extends Message {
 // Content script ready message
 export interface ContentScriptReadyMessage extends Message {
   type: MessageType.CONTENT_SCRIPT_READY;
+}
+
+// Config updated message (sent to content scripts when config changes)
+export interface ConfigUpdatedMessage extends Message {
+  type: MessageType.CONFIG_UPDATED;
+  config: ExtensionConfig;
 }

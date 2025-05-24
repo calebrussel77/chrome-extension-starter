@@ -53,8 +53,6 @@ export async function getUserPermission(): Promise<void> {
     // Vérifier si la permission a déjà été accordée dans le stockage local
     const hasStoredPermission = await checkStoredPermission();
     if (hasStoredPermission) {
-      console.log("Permission du microphone déjà accordée selon le stockage");
-
       // Vérifier si la permission est toujours valide
       const permissionStatus = await checkPermissionStatus();
       if (permissionStatus === "granted") {
@@ -64,7 +62,6 @@ export async function getUserPermission(): Promise<void> {
         );
         return;
       }
-      console.log("La permission stockée n'est plus valide, demande à nouveau");
     }
 
     // Vérifier l'état actuel de la permission
@@ -84,9 +81,7 @@ export async function getUserPermission(): Promise<void> {
     }
 
     // Demander la permission
-    console.log("Demande d'accès au microphone...");
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    console.log("Accès au microphone accordé");
 
     // Arrêter les pistes pour éviter que l'indicateur d'enregistrement ne soit affiché
     stream.getTracks().forEach((track) => track.stop());

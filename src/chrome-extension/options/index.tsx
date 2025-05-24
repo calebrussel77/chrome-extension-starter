@@ -17,7 +17,8 @@ import "../../chrome-extension/global.css";
 
 const Options = () => {
   // State
-  const [apiKey, setApiKey] = useState("");
+  const [googleApiKey, setGoogleApiKey] = useState("");
+  const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [sourceLanguage, setSourceLanguage] = useState("auto");
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isAutoTranslate, setIsAutoTranslate] = useState(true);
@@ -41,7 +42,8 @@ const Options = () => {
     const loadConfig = async () => {
       try {
         const config = await getConfig();
-        setApiKey(config.apiKey);
+        setGoogleApiKey(config.googleApiKey);
+        setOpenaiApiKey(config.openaiApiKey);
         setSourceLanguage(config.sourceLanguage);
         setTargetLanguage(config.targetLanguage);
         setIsAutoTranslate(config.autoTranslate);
@@ -213,7 +215,8 @@ const Options = () => {
 
     try {
       await updateConfig({
-        apiKey,
+        googleApiKey,
+        openaiApiKey,
         sourceLanguage,
         targetLanguage,
         autoTranslate: isAutoTranslate,
@@ -334,12 +337,35 @@ const Options = () => {
 
         <div className="mb-4">
           <Input
-            label="OpenAI API Key"
-            value={apiKey}
-            onChange={setApiKey}
+            label="Google API Key"
+            value={googleApiKey}
+            onChange={setGoogleApiKey}
             fullWidth
             type="password"
-            placeholder="Enter your API key..."
+            placeholder="Enter your Google API key..."
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Get your API key from{" "}
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              Google AI Studio
+            </a>{" "}
+            (for translation)
+          </p>
+        </div>
+
+        <div className="mb-4">
+          <Input
+            label="OpenAI API Key"
+            value={openaiApiKey}
+            onChange={setOpenaiApiKey}
+            fullWidth
+            type="password"
+            placeholder="Enter your OpenAI API key..."
           />
           <p className="text-xs text-gray-500 mt-1">
             Get your API key from{" "}
@@ -350,7 +376,8 @@ const Options = () => {
               className="text-blue-600 hover:underline"
             >
               OpenAI Platform
-            </a>
+            </a>{" "}
+            (for speech-to-text)
           </p>
         </div>
       </section>
