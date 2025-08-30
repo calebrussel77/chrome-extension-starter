@@ -1,8 +1,10 @@
 # AI Translator Pro - Chrome Extension
 
-AI Translator Pro is a powerful Chrome extension that uses Google Gemini AI to provide intelligent translation with a focus on French ↔ American English:
+AI Translator Pro is a powerful Chrome extension that uses Google Gemini AI to provide intelligent translation with configurable language pairs:
 
-- **Smart Translation**: Auto-detects language and intelligently translates between French and American English
+- **Configurable Smart Translation**: Auto-detects language and translates between your preferred language pairs
+- **10 Pre-configured Language Pairs**: French, Spanish, German, Chinese, Japanese, Italian, Portuguese, Russian, Korean, Arabic ↔ American English
+- **Custom Language Configurations**: Define your own primary, secondary, and fallback languages
 - **Advanced Slang Understanding**: Properly handles modern American expressions, abbreviations (btw, tldr, etc.), and Gen Z slang
 - **Voice-to-text functionality** with automatic translation
 - **Flexible Language Controls**: Toggle between smart mode and manual language selection
@@ -12,11 +14,12 @@ AI Translator Pro is a powerful Chrome extension that uses Google Gemini AI to p
 ## Features
 
 ### 🧠 **Smart Translation Mode** (Default)
-- **Auto-Detection**: Automatically detects if text is French or English
-- **Intelligent Translation**: French text → American English, English text → French
-- **Slang & Abbreviations**: Understands modern expressions like "dude", "btw", "fire", "no cap", etc.
+- **Configurable Language Pairs**: Choose from 10 predefined language combinations or create custom configurations
+- **Auto-Detection**: Automatically detects between your configured primary and secondary languages
+- **Intelligent Translation**: Seamlessly translates between your chosen language pair
+- **Slang & Abbreviations**: Understands modern expressions like "dude", "btw", "fire", "no cap", etc. (when English is involved)
 - **Cultural Context**: Adapts slang appropriately rather than literal translation
-- **Contextual Understanding**: Knows when "sick" means good vs. ill, "fire" means great, etc.
+- **Fallback Language**: Automatically translates unrecognized languages to your fallback choice
 
 ### 🔧 **Manual Translation Mode**
 - **Full Language Control**: Choose from 30+ supported languages
@@ -84,9 +87,14 @@ pnpm run build
 4. Enter your **OpenAI API key** (required for voice-to-text features)
 
 ### Translation Modes
-- **Smart Translation** (Default): Automatically handles French ↔ American English
+- **Smart Translation** (Default): Automatically handles your configured language pair
 - **Manual Mode**: Choose specific source and target languages from 30+ options
 - Toggle between modes using the "Smart Translation" switch in the popup
+
+### Smart Translation Configuration
+- **Language Pair Presets**: Choose from 10 predefined combinations (French-English, Spanish-English, etc.)
+- **Custom Configuration**: Define your own primary, secondary, and fallback languages
+- **Real-time Updates**: Changes apply immediately across all translation features
 
 ### Additional Settings
 - **Auto-translate**: Automatically translate selected text
@@ -98,9 +106,9 @@ pnpm run build
 ### 📝 **Text Translation**
 
 #### Smart Mode (Default)
-1. Select any text on a web page
-2. The extension automatically detects if it's French or English
-3. French text gets translated to American English, English text to French
+1. Configure your preferred language pair in settings (or use default French ↔ English)
+2. Select any text on a web page
+3. The extension automatically detects your configured languages and translates appropriately
 4. Translation appears in an elegant popup near your selection
 
 #### Manual Mode
@@ -122,11 +130,16 @@ pnpm run build
 6. If auto-translate is on, transcription automatically translates based on your mode settings
 
 #### Smart Voice Translation
-- Speak in French → Get American English text
-- Speak in English → Get French text  
-- Other languages → Get American English text
+- Speak in your primary language → Get translation in secondary language
+- Speak in your secondary language → Get translation in primary language
+- Other languages → Get translation in your fallback language
 
 ### ⚙️ **Settings & Customization**
+
+#### Smart Translation Configuration
+- **Language Pair Presets**: Quick selection from 10 popular combinations
+- **Custom Configuration**: Define primary, secondary, and fallback languages
+- **Instant Application**: Changes apply immediately to all features
 
 #### Translation Customization
 - **Custom Instructions**: Add context like "formal tone" or "technical document"
@@ -216,22 +229,29 @@ This extension requires two API keys for full functionality:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## What's New in v2.0 🎉
+## What's New in v2.1 🎉
 
-### 🧠 **Smart Translation Mode**
-- **Auto-detection**: Intelligently detects French vs English text
-- **Contextual Translation**: French → American English, English → French
-- **Slang Understanding**: Handles modern expressions, abbreviations, and Gen Z slang
+### 🔧 **Configurable Smart Translation** (NEW!)
+- **Language Pair Presets**: 10 predefined combinations including French, Spanish, German, Chinese, Japanese, Italian, Portuguese, Russian, Korean, Arabic ↔ American English
+- **Custom Language Configuration**: Define your own primary, secondary, and fallback languages
+- **Real-time Configuration**: Settings apply instantly across all translation features
+- **Flexible Fallback System**: Automatically translate unrecognized languages to your chosen fallback
+
+### 🧠 **Enhanced Smart Translation Mode**
+- **Configurable Auto-detection**: Intelligently detects between your chosen language pair
+- **Contextual Translation**: Seamlessly translates between your configured languages
+- **Slang Understanding**: Handles modern expressions, abbreviations, and Gen Z slang (when English is involved)
 - **Cultural Adaptation**: Natural translations rather than literal word-for-word
 
 ### 🎛️ **Enhanced User Control**  
 - **Flexible Modes**: Toggle between smart and manual translation
 - **Language Selection**: Full control over 30+ language pairs when needed
-- **Improved Settings**: Better organized options with clearer explanations
+- **Improved Settings**: Better organized options with smart translation configuration
+- **Dynamic Interface**: Popup shows current smart translation configuration
 
 ### 🎙️ **Advanced Voice Features**
 - **OpenAI Whisper Integration**: Higher accuracy speech recognition
-- **Smart Voice Translation**: Works seamlessly with smart translation mode
+- **Configurable Smart Voice Translation**: Works with your chosen language configuration
 - **Better Audio Processing**: Improved noise handling and transcription quality
 
 ---

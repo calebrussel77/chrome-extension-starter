@@ -143,6 +143,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         ? await smartTranslateText(
             info.selectionText,
             config.googleApiKey,
+            config.smartTranslationConfig || {
+              primaryLanguage: "fr",
+              secondaryLanguage: "en", 
+              fallbackLanguage: "en"
+            },
             config.customInstructions
           )
         : await translateText(
@@ -269,6 +274,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           ? await smartTranslateText(
               text,
               config.googleApiKey,
+              config.smartTranslationConfig || {
+                primaryLanguage: "fr",
+                secondaryLanguage: "en", 
+                fallbackLanguage: "en"
+              },
               config.customInstructions
             )
           : await translateText(

@@ -5,13 +5,14 @@ import Button from "../../components/Button";
 import Input from "../../components/Input";
 import Select from "../../components/Select";
 import Toggle from "../../components/Toggle";
-import { LANGUAGES } from "../../languages";
+import { LANGUAGES, SMART_TRANSLATION_PRESETS } from "../../languages";
 import {
   getConfig,
   getMicrophonePermission,
   setMicrophonePermission,
   updateConfig,
 } from "../../services/storage";
+import { SmartTranslationConfig } from "../../types";
 
 import "../../chrome-extension/global.css";
 
@@ -24,6 +25,13 @@ const Options = () => {
   const [isAutoTranslate, setIsAutoTranslate] = useState(true);
   const [enableAnimations, setEnableAnimations] = useState(true);
   const [smartTranslation, setSmartTranslation] = useState(true);
+  const [smartTranslationConfig, setSmartTranslationConfig] = useState<SmartTranslationConfig>({
+    primaryLanguage: "fr",
+    secondaryLanguage: "en",
+    fallbackLanguage: "en"
+  });
+  const [selectedPreset, setSelectedPreset] = useState("french-english");
+  const [customSmartTranslation, setCustomSmartTranslation] = useState(false);
   const [disabledSites, setDisabledSites] = useState<string[]>([]);
   const [newSite, setNewSite] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -50,6 +58,27 @@ const Options = () => {
         setIsAutoTranslate(config.autoTranslate);
         setEnableAnimations(config.enableAnimations);
         setSmartTranslation(config.smartTranslation ?? true);
+        setSmartTranslationConfig(config.smartTranslationConfig || {
+          primaryLanguage: "fr",
+          secondaryLanguage: "en", 
+          fallbackLanguage: "en"
+        });
+        
+        // Find matching preset or set custom
+        const matchingPreset = SMART_TRANSLATION_PRESETS.find(preset => 
+          preset.config.primaryLanguage === (config.smartTranslationConfig?.primaryLanguage || "fr") &&
+          preset.config.secondaryLanguage === (config.smartTranslationConfig?.secondaryLanguage || "en") &&
+          preset.config.fallbackLanguage === (config.smartTranslationConfig?.fallbackLanguage || "en")
+        );
+        
+        if (matchingPreset) {
+          setSelectedPreset(matchingPreset.id);
+          setCustomSmartTranslation(false);
+        } else {
+          setSelectedPreset("custom");
+          setCustomSmartTranslation(true);
+        }
+        
         setDisabledSites(config.disabledSites);
       } catch (err) {
         console.error("Error loading config:", err);
@@ -224,6 +253,7 @@ const Options = () => {
         autoTranslate: isAutoTranslate,
         enableAnimations,
         smartTranslation,
+        smartTranslationConfig,
         disabledSites,
       });
 
@@ -272,6 +302,29 @@ const Options = () => {
   // Remove disabled site
   const removeDisabledSite = (site: string) => {
     setDisabledSites(disabledSites.filter((s) => s !== site));
+  };
+
+  // Handle smart translation preset change
+  const handlePresetChange = (presetId: string) => {
+    setSelectedPreset(presetId);
+    
+    if (presetId === "custom") {
+      setCustomSmartTranslation(true);
+    } else {
+      setCustomSmartTranslation(false);
+      const preset = SMART_TRANSLATION_PRESETS.find(p => p.id === presetId);
+      if (preset) {
+        setSmartTranslationConfig(preset.config);
+      }
+    }
+  };
+
+  // Handle custom smart translation config changes
+  const handleSmartTranslationConfigChange = (field: keyof SmartTranslationConfig, value: string) => {
+    setSmartTranslationConfig(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   // Get permission status UI elements
@@ -488,6 +541,126 @@ const Options = () => {
           />
         </div>
       </section>
+
+      {/* Smart Translation Configuration */}
+      {smartTranslation && (
+        <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
+          <h2 className="text-lg font-medium mb-4">Smart Translation Configuration</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Configure which languages your smart translation should handle automatically.
+          </p>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Choose a Preset or Custom Configuration
+            </label>
+            
+            {/* Preset Selection */}
+            <div className="grid gap-3 mb-4">
+              {SMART_TRANSLATION_PRESETS.map((preset) => (
+                <label key={preset.id} className="flex items-start p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="smartTranslationPreset"
+                    value={preset.id}
+                    checked={selectedPreset === preset.id}
+                    onChange={(e) => handlePresetChange(e.target.value)}
+                    className="mt-1 mr-3"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{preset.name}</div>
+                    <div className="text-sm text-gray-600">{preset.description}</div>
+                  </div>
+                </label>
+              ))}
+              
+              {/* Custom Option */}
+              <label className="flex items-start p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  name="smartTranslationPreset"
+                  value="custom"
+                  checked={selectedPreset === "custom"}
+                  onChange={(e) => handlePresetChange(e.target.value)}
+                  className="mt-1 mr-3"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">Custom Configuration</div>
+                  <div className="text-sm text-gray-600">Configure your own language pair</div>
+                </div>
+              </label>
+            </div>
+
+            {/* Custom Configuration UI */}
+            {customSmartTranslation && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200"
+              >
+                <h3 className="font-medium text-gray-900 mb-3">Custom Language Configuration</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Primary Language
+                    </label>
+                    <Select
+                      options={LANGUAGES.filter(lang => lang.code !== "auto").map(lang => ({
+                        value: lang.code,
+                        label: lang.name,
+                      }))}
+                      value={smartTranslationConfig.primaryLanguage}
+                      onChange={(value) => handleSmartTranslationConfigChange("primaryLanguage", value)}
+                      fullWidth
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Your main working language</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Secondary Language
+                    </label>
+                    <Select
+                      options={LANGUAGES.filter(lang => lang.code !== "auto").map(lang => ({
+                        value: lang.code,
+                        label: lang.name,
+                      }))}
+                      value={smartTranslationConfig.secondaryLanguage}
+                      onChange={(value) => handleSmartTranslationConfigChange("secondaryLanguage", value)}
+                      fullWidth
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Language to translate to/from</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Fallback Language
+                    </label>
+                    <Select
+                      options={LANGUAGES.filter(lang => lang.code !== "auto").map(lang => ({
+                        value: lang.code,
+                        label: lang.name,
+                      }))}
+                      value={smartTranslationConfig.fallbackLanguage}
+                      onChange={(value) => handleSmartTranslationConfigChange("fallbackLanguage", value)}
+                      fullWidth
+                    />
+                    <p className="text-xs text-gray-500 mt-1">For unrecognized languages</p>
+                  </div>
+                </div>
+                
+                <div className="mt-3 p-3 bg-white rounded border border-blue-300">
+                  <p className="text-sm text-blue-800">
+                    <strong>How it works:</strong> Text in your primary language gets translated to your secondary language, 
+                    and vice versa. Any other language gets translated to your fallback language.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Disabled Sites */}
       <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">

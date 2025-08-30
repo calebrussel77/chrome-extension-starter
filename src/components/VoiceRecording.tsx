@@ -3,7 +3,7 @@ import { Copy, Mic, MicOff, Square, Volume2 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { speechToText, translateText, smartTranslateText } from "../services/api";
 import { addToHistory, getHistory } from "../services/storage";
-import { HistoryItem } from "../types";
+import { HistoryItem, SmartTranslationConfig } from "../types";
 import Button from "./Button";
 
 interface VoiceRecordingProps {
@@ -15,6 +15,7 @@ interface VoiceRecordingProps {
   microphonePermission: boolean | null;
   customInstructions: string;
   smartTranslation: boolean;
+  smartTranslationConfig: SmartTranslationConfig;
   onError: (error: string) => void;
   onInputTextChange: (text: string) => void;
   onTranslatedTextChange: (text: string) => void;
@@ -32,6 +33,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
   microphonePermission,
   customInstructions,
   smartTranslation,
+  smartTranslationConfig,
   onError,
   onInputTextChange,
   onTranslatedTextChange,
@@ -145,6 +147,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
               ? await smartTranslateText(
                   transcribedText,
                   googleApiKey,
+                  smartTranslationConfig,
                   customInstructions
                 )
               : await translateText(

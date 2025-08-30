@@ -1,7 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 import dedent from "dedent";
 import OpenAI from "openai";
-import { TranslationResponse } from "../types";
+import { TranslationResponse, SmartTranslationConfig } from "../types";
+import { LANGUAGES } from "../languages";
 
 /**
  * Translates text using Google Gemini model
@@ -104,15 +105,17 @@ export const translateText = async (
 };
 
 /**
- * Smart translation that auto-detects and translates between French and American English
+ * Smart translation that auto-detects and translates between configured language pairs
  * @param text The text to translate
  * @param googleApiKey The Google Gemini API key
+ * @param smartConfig The smart translation configuration (language pairs)
  * @param customInstructions Optional custom instructions to provide additional context for translation
  * @returns A promise that resolves to the translation response
  */
 export const smartTranslateText = async (
   text: string,
   googleApiKey: string,
+  smartConfig: SmartTranslationConfig,
   customInstructions?: string
 ): Promise<TranslationResponse> => {
   try {
@@ -128,16 +131,22 @@ export const smartTranslateText = async (
       apiKey: googleApiKey,
     });
 
+    // Get language names for the prompt
+    const primaryLang = LANGUAGES.find(lang => lang.code === smartConfig.primaryLanguage)?.name || smartConfig.primaryLanguage;
+    const secondaryLang = LANGUAGES.find(lang => lang.code === smartConfig.secondaryLanguage)?.name || smartConfig.secondaryLanguage;
+    const fallbackLang = LANGUAGES.find(lang => lang.code === smartConfig.fallbackLanguage)?.name || smartConfig.fallbackLanguage;
+
     // Smart translation system prompt
     let systemPrompt = dedent`
-    You are an expert translator specializing in French and American English with deep knowledge of modern slang, abbreviations, and cultural expressions.
+    You are an expert translator specializing in ${primaryLang} and ${secondaryLang} with deep knowledge of modern slang, abbreviations, and cultural expressions.
     
     Your task is to:
     1. Auto-detect the language of the provided text
-    2. If the text is in French, translate it to American English
-    3. If the text is in American English (or any English variant), translate it to French
-    4. If the text is in neither French nor English, translate it to American English
+    2. If the text is in ${primaryLang}, translate it to ${secondaryLang}
+    3. If the text is in ${secondaryLang}, translate it to ${primaryLang}
+    4. If the text is in neither ${primaryLang} nor ${secondaryLang}, translate it to ${fallbackLang}
     
+    ${smartConfig.primaryLanguage === 'en' || smartConfig.secondaryLanguage === 'en' || smartConfig.fallbackLanguage === 'en' ? `
     CRITICAL - American Expressions & Abbreviations Knowledge:
     You must properly understand and translate common American expressions, slang, and abbreviations including but not limited to:
     
@@ -146,16 +155,17 @@ export const smartTranslateText = async (
     Slang terms: dude, bro, man, guys (when addressing people), cool, awesome, sick (meaning good), fire (excellent), lit (amazing), salty (upset), flex (show off), vibe/vibes, squad, fam, bestie, sus (suspicious), cap/no cap (lie/truth), periodt, slay, stan, ghost/ghosting, simp, karen, based, cringe, chad, boomer, zoomer, millennial, gen z, mood, bet (yes/agreed), facts, lowkey/highkey, deadass, fr/for real, no shot, mid (mediocre), bussin (excellent), slaps (sounds good), hits different, rent free, living for it, that's on me, my bad, catch these hands, spill the tea, throwing shade, coming for someone, pressed, triggered, woke, canceled, problematic, valid, chief (as in "this ain't it chief"), it's giving (it seems like), purr, and period/periodT
     
     Contextual expressions: "I'm dead" (very funny), "that's fire" (that's great), "no cap" (no lie), "it hits different" (it's uniquely good), "that's sus" (suspicious), "living rent free in my head" (can't stop thinking about it), "spill the tea" (tell me the gossip), "throwing shade" (subtle insult), "that's a vibe" (good feeling), "sending me" (making me laugh), "I can't even" (overwhelmed), "this slaps" (this is great), "lowkey/highkey" (somewhat/definitely), "periodt" (end of discussion), "we stan" (we support), "it's giving..." (it seems like/reminds me of)
+    ` : ''}
     
     Important translation guidelines:
     - The current time is ${new Date().toLocaleString()} (${
       Intl.DateTimeFormat().resolvedOptions().timeZone
     } timezone).
     - Preserve any technical terms, code snippets, variable names, or keywords that appear in the original text, especially those related to programming or web development. Do not translate these specific elements.
-    - For American English translations, use American spelling, vocabulary, and expressions
-    - For French translations, use standard French grammar and vocabulary, adapting slang appropriately to French equivalents when possible
-    - When translating American slang to French, find the most natural French equivalent rather than literal translation
+    - Use proper spelling, vocabulary, and expressions appropriate for each language
+    - When translating slang or colloquial expressions, find the most natural equivalent in the target language rather than literal translation
     - When translating abbreviations, either expand them in the target language or use equivalent abbreviations if they exist
+    - Maintain the tone and register of the original text (formal, casual, technical, etc.)
     - Provide ONLY the translated text as your response, without any additional commentary, explanations, or formatting.
     - Do not include phrases like "Here is the translation:" or similar - just provide the direct translation.
     `;

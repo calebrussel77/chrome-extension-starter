@@ -30,7 +30,7 @@ import {
   getMicrophonePermission,
   updateConfig,
 } from "../../services/storage";
-import { HistoryItem, MessageType } from "../../types";
+import { HistoryItem, MessageType, SmartTranslationConfig } from "../../types";
 
 import "../../chrome-extension/global.css";
 
@@ -48,6 +48,11 @@ const Popup: React.FC = () => {
   const [enableAnimations, setEnableAnimations] = useState(true);
   const [customInstructions, setCustomInstructions] = useState("");
   const [smartTranslation, setSmartTranslation] = useState(true);
+  const [smartTranslationConfig, setSmartTranslationConfig] = useState<SmartTranslationConfig>({
+    primaryLanguage: "fr",
+    secondaryLanguage: "en", 
+    fallbackLanguage: "en"
+  });
   const [showCustomInstructions, setShowCustomInstructions] = useState(false);
   const [activeTab, setActiveTab] = useState<"translate" | "voice" | "history">(
     "translate"
@@ -72,6 +77,11 @@ const Popup: React.FC = () => {
         setEnableAnimations(config.enableAnimations);
         setCustomInstructions(config.customInstructions || "");
         setSmartTranslation(config.smartTranslation ?? true);
+        setSmartTranslationConfig(config.smartTranslationConfig || {
+          primaryLanguage: "fr",
+          secondaryLanguage: "en", 
+          fallbackLanguage: "en"
+        });
         setShowCustomInstructions(
           !!(config.customInstructions && config.customInstructions.trim())
         );
@@ -105,6 +115,7 @@ const Popup: React.FC = () => {
           enableAnimations,
           customInstructions,
           smartTranslation,
+          smartTranslationConfig,
         });
       } catch (err) {
         console.error("Error saving config:", err);
@@ -121,6 +132,7 @@ const Popup: React.FC = () => {
     enableAnimations,
     customInstructions,
     smartTranslation,
+    smartTranslationConfig,
   ]);
 
   // Check if a site is disabled
@@ -209,6 +221,7 @@ const Popup: React.FC = () => {
         ? await smartTranslateText(
             inputText,
             googleApiKey,
+            smartTranslationConfig,
             customInstructions
           )
         : await translateText(
@@ -386,7 +399,11 @@ const Popup: React.FC = () => {
           checked={smartTranslation}
           onChange={setSmartTranslation}
           label="Smart Translation"
-          description="Auto-detect and translate between French and American English"
+          description={`Auto-detect and translate between ${
+            LANGUAGES.find(lang => lang.code === smartTranslationConfig.primaryLanguage)?.name || smartTranslationConfig.primaryLanguage
+          } and ${
+            LANGUAGES.find(lang => lang.code === smartTranslationConfig.secondaryLanguage)?.name || smartTranslationConfig.secondaryLanguage
+          }`}
         />
       </div>
 
@@ -602,6 +619,7 @@ const Popup: React.FC = () => {
               microphonePermission={microphonePermission}
               customInstructions={customInstructions}
               smartTranslation={smartTranslation}
+              smartTranslationConfig={smartTranslationConfig}
               onError={setError}
               onInputTextChange={setInputText}
               onTranslatedTextChange={setTranslatedText}

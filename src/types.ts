@@ -1,5 +1,20 @@
 // Define types for our extension
 
+// Smart translation configuration
+export type SmartTranslationConfig = {
+  primaryLanguage: string;
+  secondaryLanguage: string;
+  fallbackLanguage: string; // Language to use for unrecognized text
+};
+
+// Predefined smart translation presets
+export type SmartTranslationPreset = {
+  id: string;
+  name: string;
+  description: string;
+  config: SmartTranslationConfig;
+};
+
 // Configuration stored in chrome.storage
 export type ExtensionConfig = {
   googleApiKey: string;
@@ -11,6 +26,7 @@ export type ExtensionConfig = {
   enableAnimations: boolean;
   customInstructions: string;
   smartTranslation: boolean;
+  smartTranslationConfig: SmartTranslationConfig;
   history: HistoryItem[];
 };
 
