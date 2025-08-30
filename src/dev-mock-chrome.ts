@@ -6,28 +6,26 @@ interface MockStorage {
     get: (keys: string[] | string | null, callback: (result: any) => void) => void;
     set: (items: any, callback?: () => void) => void;
   };
+  local: any;
+  managed: any;
+  session: any;
+  onChanged: any;
 }
 
 interface MockTabs {
   query: (queryInfo: any, callback: (tabs: any[]) => void) => void;
+  [key: string]: any;
 }
 
 interface MockRuntime {
   sendMessage: (message: any, callback?: (response: any) => void) => void;
+  [key: string]: any;
 }
 
-declare global {
-  interface Window {
-    chrome: {
-      storage: MockStorage;
-      tabs: MockTabs;
-      runtime: MockRuntime;
-    };
-  }
-}
+// Remove global interface declaration to avoid conflicts
 
 // Create a simple localStorage-based mock for Chrome storage
-const mockStorage = {
+const mockStorage: MockStorage = {
   sync: {
     get: (keys: string[] | string | null, callback: (result: any) => void) => {
       setTimeout(() => {
@@ -70,12 +68,16 @@ const mockStorage = {
         if (callback) callback();
       }, 10);
     }
-  }
+  },
+  local: {} as any,
+  managed: {} as any,
+  session: {} as any,
+  onChanged: {} as any
 };
 
 // Mock tabs API
-const mockTabs = {
-  query: (queryInfo: any, callback: (tabs: any[]) => void) => {
+const mockTabs: MockTabs = {
+  query: (_queryInfo: any, callback: (tabs: any[]) => void) => {
     setTimeout(() => {
       // Return a mock tab representing the current development page
       callback([{
@@ -89,7 +91,7 @@ const mockTabs = {
 };
 
 // Mock runtime API
-const mockRuntime = {
+const mockRuntime: MockRuntime = {
   sendMessage: (message: any, callback?: (response: any) => void) => {
     setTimeout(() => {
       // Mock responses for different message types
@@ -108,7 +110,7 @@ const mockRuntime = {
 
 // Only add mock if we're in development and chrome APIs don't exist
 if (typeof window !== 'undefined' && !window.chrome) {
-  window.chrome = {
+  (window as any).chrome = {
     storage: mockStorage,
     tabs: mockTabs,
     runtime: mockRuntime
@@ -120,7 +122,7 @@ if (typeof window !== 'undefined' && !window.chrome) {
 // Also mock navigator.permissions if it doesn't exist
 if (typeof navigator !== 'undefined' && !navigator.permissions) {
   (navigator as any).permissions = {
-    query: async (permissions: any) => {
+    query: async (_permissions: any) => {
       return {
         state: 'granted',
         addEventListener: () => {}

@@ -119,7 +119,7 @@ const init = async () => {
       if (response) {
         config = response;
         // Update theme when config is loaded
-        if (config.theme) {
+        if (config?.theme) {
           currentTheme = config.theme;
         }
       } else {
@@ -160,7 +160,7 @@ const init = async () => {
       } else if (message.type === "CONFIG_UPDATED") {
         // Update config when it changes
         config = message.config;
-        if (config.theme) {
+        if (config?.theme) {
           currentTheme = config.theme;
         }
         sendResponse({ success: true });

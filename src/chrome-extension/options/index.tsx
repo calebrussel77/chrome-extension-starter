@@ -1,13 +1,26 @@
-import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggleWithLabel } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
+import { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 import { LANGUAGES, SMART_TRANSLATION_PRESETS } from "../../languages";
 import {
   getConfig,
@@ -16,15 +29,14 @@ import {
   updateConfig,
 } from "../../services/storage";
 import { SmartTranslationConfig } from "../../types";
-import { useTheme } from "next-themes";
 
 // Import mock Chrome APIs for development
-import "../../dev-mock-chrome";
 import "../../chrome-extension/global.css";
+import "../../dev-mock-chrome";
 
 const OptionsContent = () => {
   const { theme, setTheme } = useTheme();
-  
+
   // State
   const [googleApiKey, setGoogleApiKey] = useState("");
   const [openaiApiKey, setOpenaiApiKey] = useState("");
@@ -33,11 +45,12 @@ const OptionsContent = () => {
   const [isAutoTranslate, setIsAutoTranslate] = useState(true);
   const [enableAnimations, setEnableAnimations] = useState(true);
   const [smartTranslation, setSmartTranslation] = useState(true);
-  const [smartTranslationConfig, setSmartTranslationConfig] = useState<SmartTranslationConfig>({
-    primaryLanguage: "fr",
-    secondaryLanguage: "en",
-    fallbackLanguage: "en"
-  });
+  const [smartTranslationConfig, setSmartTranslationConfig] =
+    useState<SmartTranslationConfig>({
+      primaryLanguage: "fr",
+      secondaryLanguage: "en",
+      fallbackLanguage: "en",
+    });
   const [selectedPreset, setSelectedPreset] = useState("french-english");
   const [customSmartTranslation, setCustomSmartTranslation] = useState(false);
   const [disabledSites, setDisabledSites] = useState<string[]>([]);
@@ -66,24 +79,30 @@ const OptionsContent = () => {
         setIsAutoTranslate(config.autoTranslate);
         setEnableAnimations(config.enableAnimations);
         setSmartTranslation(config.smartTranslation ?? true);
-        setSmartTranslationConfig(config.smartTranslationConfig || {
-          primaryLanguage: "fr",
-          secondaryLanguage: "en", 
-          fallbackLanguage: "en"
-        });
-        
+        setSmartTranslationConfig(
+          config.smartTranslationConfig || {
+            primaryLanguage: "fr",
+            secondaryLanguage: "en",
+            fallbackLanguage: "en",
+          }
+        );
+
         // Set theme from config
         if (config.theme) {
           setTheme(config.theme);
         }
-        
+
         // Find matching preset or set custom
-        const matchingPreset = SMART_TRANSLATION_PRESETS.find(preset => 
-          preset.config.primaryLanguage === (config.smartTranslationConfig?.primaryLanguage || "fr") &&
-          preset.config.secondaryLanguage === (config.smartTranslationConfig?.secondaryLanguage || "en") &&
-          preset.config.fallbackLanguage === (config.smartTranslationConfig?.fallbackLanguage || "en")
+        const matchingPreset = SMART_TRANSLATION_PRESETS.find(
+          (preset) =>
+            preset.config.primaryLanguage ===
+              (config.smartTranslationConfig?.primaryLanguage || "fr") &&
+            preset.config.secondaryLanguage ===
+              (config.smartTranslationConfig?.secondaryLanguage || "en") &&
+            preset.config.fallbackLanguage ===
+              (config.smartTranslationConfig?.fallbackLanguage || "en")
         );
-        
+
         if (matchingPreset) {
           setSelectedPreset(matchingPreset.id);
           setCustomSmartTranslation(false);
@@ -91,7 +110,7 @@ const OptionsContent = () => {
           setSelectedPreset("custom");
           setCustomSmartTranslation(true);
         }
-        
+
         setDisabledSites(config.disabledSites);
       } catch (err) {
         console.error("Error loading config:", err);
@@ -106,7 +125,9 @@ const OptionsContent = () => {
   // Save theme when it changes
   useEffect(() => {
     if (theme) {
-      updateConfig({ theme: theme as "light" | "dark" | "system" }).catch(console.error);
+      updateConfig({ theme: theme as "light" | "dark" | "system" }).catch(
+        console.error
+      );
     }
   }, [theme]);
 
@@ -310,12 +331,12 @@ const OptionsContent = () => {
   // Handle smart translation preset change
   const handlePresetChange = (presetId: string) => {
     setSelectedPreset(presetId);
-    
+
     if (presetId === "custom") {
       setCustomSmartTranslation(true);
     } else {
       setCustomSmartTranslation(false);
-      const preset = SMART_TRANSLATION_PRESETS.find(p => p.id === presetId);
+      const preset = SMART_TRANSLATION_PRESETS.find((p) => p.id === presetId);
       if (preset) {
         setSmartTranslationConfig(preset.config);
       }
@@ -323,10 +344,13 @@ const OptionsContent = () => {
   };
 
   // Handle custom smart translation config changes
-  const handleSmartTranslationConfigChange = (field: keyof SmartTranslationConfig, value: string) => {
-    setSmartTranslationConfig(prev => ({
+  const handleSmartTranslationConfigChange = (
+    field: keyof SmartTranslationConfig,
+    value: string
+  ) => {
+    setSmartTranslationConfig((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -382,7 +406,7 @@ const OptionsContent = () => {
               className="w-10 h-10"
             />
             <div>
-              <h1 className="text-3xl font-bold">AI Translator Pro</h1>
+              <h1 className="text-xl font-bold">AI Translator Pro</h1>
               <p className="text-muted-foreground">
                 Configure your API keys and customize translation options.
               </p>
@@ -403,7 +427,10 @@ const OptionsContent = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label htmlFor="googleApi" className="text-sm font-medium mb-2 block">
+              <label
+                htmlFor="googleApi"
+                className="text-sm font-medium mb-2 block"
+              >
                 Google API Key
               </label>
               <Input
@@ -428,7 +455,10 @@ const OptionsContent = () => {
             </div>
 
             <div>
-              <label htmlFor="openaiApi" className="text-sm font-medium mb-2 block">
+              <label
+                htmlFor="openaiApi"
+                className="text-sm font-medium mb-2 block"
+              >
                 OpenAI API Key
               </label>
               <Input
@@ -528,7 +558,10 @@ const OptionsContent = () => {
                   <label className="text-sm font-medium mb-2 block">
                     Default Source Language
                   </label>
-                  <Select value={sourceLanguage} onValueChange={setSourceLanguage}>
+                  <Select
+                    value={sourceLanguage}
+                    onValueChange={setSourceLanguage}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -546,16 +579,21 @@ const OptionsContent = () => {
                   <label className="text-sm font-medium mb-2 block">
                     Default Target Language
                   </label>
-                  <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+                  <Select
+                    value={targetLanguage}
+                    onValueChange={setTargetLanguage}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {LANGUAGES.filter((lang) => lang.code !== "auto").map((lang) => (
-                        <SelectItem key={lang.code} value={lang.code}>
-                          {lang.name}
-                        </SelectItem>
-                      ))}
+                      {LANGUAGES.filter((lang) => lang.code !== "auto").map(
+                        (lang) => (
+                          <SelectItem key={lang.code} value={lang.code}>
+                            {lang.name}
+                          </SelectItem>
+                        )
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -564,7 +602,9 @@ const OptionsContent = () => {
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <label className="text-sm font-medium">Automatic Translation</label>
+                <label className="text-sm font-medium">
+                  Automatic Translation
+                </label>
                 <p className="text-xs text-muted-foreground">
                   Automatically translate selected text
                 </p>
@@ -596,7 +636,8 @@ const OptionsContent = () => {
             <CardHeader>
               <CardTitle>Smart Translation Configuration</CardTitle>
               <CardDescription>
-                Configure which languages your smart translation should handle automatically.
+                Configure which languages your smart translation should handle
+                automatically.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -604,10 +645,13 @@ const OptionsContent = () => {
                 <label className="text-sm font-medium mb-3 block">
                   Choose a Preset or Custom Configuration
                 </label>
-                
+
                 <div className="grid gap-3 mb-4">
                   {SMART_TRANSLATION_PRESETS.map((preset) => (
-                    <label key={preset.id} className="flex items-start p-3 border rounded-lg hover:bg-accent cursor-pointer">
+                    <label
+                      key={preset.id}
+                      className="flex items-start p-3 border rounded-lg hover:bg-accent cursor-pointer"
+                    >
                       <input
                         type="radio"
                         name="smartTranslationPreset"
@@ -618,11 +662,13 @@ const OptionsContent = () => {
                       />
                       <div className="flex-1">
                         <div className="font-medium">{preset.name}</div>
-                        <div className="text-sm text-muted-foreground">{preset.description}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {preset.description}
+                        </div>
                       </div>
                     </label>
                   ))}
-                  
+
                   <label className="flex items-start p-3 border rounded-lg hover:bg-accent cursor-pointer">
                     <input
                       type="radio"
@@ -634,7 +680,9 @@ const OptionsContent = () => {
                     />
                     <div className="flex-1">
                       <div className="font-medium">Custom Configuration</div>
-                      <div className="text-sm text-muted-foreground">Configure your own language pair</div>
+                      <div className="text-sm text-muted-foreground">
+                        Configure your own language pair
+                      </div>
                     </div>
                   </label>
                 </div>
@@ -646,7 +694,9 @@ const OptionsContent = () => {
                     exit={{ opacity: 0, height: 0 }}
                     className="p-4 bg-muted rounded-lg border"
                   >
-                    <h3 className="font-medium mb-3">Custom Language Configuration</h3>
+                    <h3 className="font-medium mb-3">
+                      Custom Language Configuration
+                    </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="text-sm font-medium mb-2 block">
@@ -654,71 +704,100 @@ const OptionsContent = () => {
                         </label>
                         <Select
                           value={smartTranslationConfig.primaryLanguage}
-                          onValueChange={(value) => handleSmartTranslationConfigChange("primaryLanguage", value)}
+                          onValueChange={(value) =>
+                            handleSmartTranslationConfigChange(
+                              "primaryLanguage",
+                              value
+                            )
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {LANGUAGES.filter(lang => lang.code !== "auto").map(lang => (
+                            {LANGUAGES.filter(
+                              (lang) => lang.code !== "auto"
+                            ).map((lang) => (
                               <SelectItem key={lang.code} value={lang.code}>
                                 {lang.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground mt-1">Your main working language</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Your main working language
+                        </p>
                       </div>
-                      
+
                       <div>
                         <label className="text-sm font-medium mb-2 block">
                           Secondary Language
                         </label>
                         <Select
                           value={smartTranslationConfig.secondaryLanguage}
-                          onValueChange={(value) => handleSmartTranslationConfigChange("secondaryLanguage", value)}
+                          onValueChange={(value) =>
+                            handleSmartTranslationConfigChange(
+                              "secondaryLanguage",
+                              value
+                            )
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {LANGUAGES.filter(lang => lang.code !== "auto").map(lang => (
+                            {LANGUAGES.filter(
+                              (lang) => lang.code !== "auto"
+                            ).map((lang) => (
                               <SelectItem key={lang.code} value={lang.code}>
                                 {lang.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground mt-1">Language to translate to/from</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Language to translate to/from
+                        </p>
                       </div>
-                      
+
                       <div>
                         <label className="text-sm font-medium mb-2 block">
                           Fallback Language
                         </label>
                         <Select
                           value={smartTranslationConfig.fallbackLanguage}
-                          onValueChange={(value) => handleSmartTranslationConfigChange("fallbackLanguage", value)}
+                          onValueChange={(value) =>
+                            handleSmartTranslationConfigChange(
+                              "fallbackLanguage",
+                              value
+                            )
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {LANGUAGES.filter(lang => lang.code !== "auto").map(lang => (
+                            {LANGUAGES.filter(
+                              (lang) => lang.code !== "auto"
+                            ).map((lang) => (
                               <SelectItem key={lang.code} value={lang.code}>
                                 {lang.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground mt-1">For unrecognized languages</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          For unrecognized languages
+                        </p>
                       </div>
                     </div>
-                    
+
                     <div className="mt-3 p-3 bg-background rounded border">
                       <p className="text-sm">
-                        <strong>How it works:</strong> Text in your primary language gets translated to your secondary language, 
-                        and vice versa. Any other language gets translated to your fallback language.
+                        <strong>How it works:</strong> Text in your primary
+                        language gets translated to your secondary language, and
+                        vice versa. Any other language gets translated to your
+                        fallback language.
                       </p>
                     </div>
                   </motion.div>
@@ -751,7 +830,9 @@ const OptionsContent = () => {
 
             <div className="space-y-2">
               {disabledSites.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No disabled websites</p>
+                <p className="text-sm text-muted-foreground">
+                  No disabled websites
+                </p>
               ) : (
                 disabledSites.map((site) => (
                   <div
@@ -797,12 +878,8 @@ const OptionsContent = () => {
             Settings saved successfully!
           </motion.p>
         )}
-        
-        <Button
-          onClick={saveConfig}
-          disabled={isSaving}
-          size="lg"
-        >
+
+        <Button onClick={saveConfig} disabled={isSaving} size="lg">
           {isSaving ? "Saving..." : "Save Settings"}
         </Button>
       </div>

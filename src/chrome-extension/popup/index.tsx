@@ -345,8 +345,10 @@ const PopupContent: React.FC = () => {
                 <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-amber-800 dark:text-amber-200">
                   Please configure your API keys in the settings.
-                  {!googleApiKey && " Google API key is required for translation."}
-                  {!openaiApiKey && " OpenAI API key is required for voice features."}
+                  {!googleApiKey &&
+                    " Google API key is required for translation."}
+                  {!openaiApiKey &&
+                    " OpenAI API key is required for voice features."}
                 </div>
               </div>
             </motion.div>
@@ -359,7 +361,9 @@ const PopupContent: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Info size={14} className="text-muted-foreground" />
                   <div className="text-sm">
-                    <span className="text-muted-foreground">Current site: </span>
+                    <span className="text-muted-foreground">
+                      Current site:{" "}
+                    </span>
                     <span className="font-medium">{currentSite}</span>
                   </div>
                 </div>
@@ -391,7 +395,9 @@ const PopupContent: React.FC = () => {
                     ? "text-primary border-b-2 border-primary bg-primary/5"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 }`}
-                onClick={() => setActiveTab(id as any)}
+                onClick={() =>
+                  setActiveTab(id as "translate" | "voice" | "history")
+                }
               >
                 <Icon size={14} />
                 {label}
@@ -405,11 +411,16 @@ const PopupContent: React.FC = () => {
               <div>
                 <div className="text-sm font-medium">Smart Translation</div>
                 <div className="text-xs text-muted-foreground">
-                  Auto-detect and translate between {
-                    LANGUAGES.find(lang => lang.code === smartTranslationConfig.primaryLanguage)?.name || smartTranslationConfig.primaryLanguage
-                  } and {
-                    LANGUAGES.find(lang => lang.code === smartTranslationConfig.secondaryLanguage)?.name || smartTranslationConfig.secondaryLanguage
-                  }
+                  Auto-detect and translate between{" "}
+                  {LANGUAGES.find(
+                    (lang) =>
+                      lang.code === smartTranslationConfig.primaryLanguage
+                  )?.name || smartTranslationConfig.primaryLanguage}{" "}
+                  and{" "}
+                  {LANGUAGES.find(
+                    (lang) =>
+                      lang.code === smartTranslationConfig.secondaryLanguage
+                  )?.name || smartTranslationConfig.secondaryLanguage}
                 </div>
               </div>
               <Switch
@@ -423,7 +434,10 @@ const PopupContent: React.FC = () => {
           {!smartTranslation && (
             <div className="flex gap-2">
               <div className="flex-1">
-                <Select value={sourceLanguage} onValueChange={setSourceLanguage}>
+                <Select
+                  value={sourceLanguage}
+                  onValueChange={setSourceLanguage}
+                >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>
@@ -452,16 +466,21 @@ const PopupContent: React.FC = () => {
               </Button>
 
               <div className="flex-1">
-                <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+                <Select
+                  value={targetLanguage}
+                  onValueChange={setTargetLanguage}
+                >
                   <SelectTrigger className="h-9 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {LANGUAGES.filter((lang) => lang.code !== "auto").map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code}>
-                        {lang.name}
-                      </SelectItem>
-                    ))}
+                    {LANGUAGES.filter((lang) => lang.code !== "auto").map(
+                      (lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -473,7 +492,9 @@ const PopupContent: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium">Automatic translation</div>
-                <div className="text-xs text-muted-foreground">Automatically translate selected text</div>
+                <div className="text-xs text-muted-foreground">
+                  Automatically translate selected text
+                </div>
               </div>
               <Switch
                 checked={isAutoTranslate}
@@ -491,7 +512,9 @@ const PopupContent: React.FC = () => {
             >
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+                <p className="text-sm text-red-800 dark:text-red-200">
+                  {error}
+                </p>
               </div>
             </motion.div>
           )}
@@ -517,7 +540,9 @@ const PopupContent: React.FC = () => {
                     className="w-full justify-between p-2 h-auto text-left hover:bg-accent"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Custom Instructions</span>
+                      <span className="text-sm font-medium">
+                        Custom Instructions
+                      </span>
                       {customInstructions && (
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                       )}
@@ -548,13 +573,16 @@ const PopupContent: React.FC = () => {
                           <Textarea
                             id="customInstructions"
                             value={customInstructions}
-                            onChange={(e) => setCustomInstructions(e.target.value)}
+                            onChange={(e) =>
+                              setCustomInstructions(e.target.value)
+                            }
                             className="text-sm resize-none"
                             rows={3}
                             placeholder="e.g., 'This is a technical document about software development' or 'Translate in a formal tone' or 'Keep brand names untranslated'..."
                           />
                           <p className="text-xs text-muted-foreground mt-2">
-                            💡 Provide context, tone preferences, or specific instructions to improve translation quality.
+                            💡 Provide context, tone preferences, or specific
+                            instructions to improve translation quality.
                           </p>
                         </div>
                       </motion.div>
