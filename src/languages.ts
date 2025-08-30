@@ -44,5 +44,6 @@ export const DEFAULT_CONFIG = {
   autoTranslate: true,
   enableAnimations: true,
   customInstructions: "",
+  smartTranslation: true,
   history: [],
 };

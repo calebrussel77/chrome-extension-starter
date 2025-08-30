@@ -23,6 +23,7 @@ const Options = () => {
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isAutoTranslate, setIsAutoTranslate] = useState(true);
   const [enableAnimations, setEnableAnimations] = useState(true);
+  const [smartTranslation, setSmartTranslation] = useState(true);
   const [disabledSites, setDisabledSites] = useState<string[]>([]);
   const [newSite, setNewSite] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -48,6 +49,7 @@ const Options = () => {
         setTargetLanguage(config.targetLanguage);
         setIsAutoTranslate(config.autoTranslate);
         setEnableAnimations(config.enableAnimations);
+        setSmartTranslation(config.smartTranslation ?? true);
         setDisabledSites(config.disabledSites);
       } catch (err) {
         console.error("Error loading config:", err);
@@ -221,6 +223,7 @@ const Options = () => {
         targetLanguage,
         autoTranslate: isAutoTranslate,
         enableAnimations,
+        smartTranslation,
         disabledSites,
       });
 
@@ -430,31 +433,42 @@ const Options = () => {
       <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
         <h2 className="text-lg font-medium mb-4">Translation Options</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <Select
-            label="Default Source Language"
-            options={LANGUAGES.map((lang) => ({
-              value: lang.code,
-              label: lang.name,
-            }))}
-            value={sourceLanguage}
-            onChange={setSourceLanguage}
-            fullWidth
-          />
-
-          <Select
-            label="Default Target Language"
-            options={LANGUAGES.filter((lang) => lang.code !== "auto").map(
-              (lang) => ({
-                value: lang.code,
-                label: lang.name,
-              })
-            )}
-            value={targetLanguage}
-            onChange={setTargetLanguage}
-            fullWidth
+        <div className="mb-4">
+          <Toggle
+            checked={smartTranslation}
+            onChange={setSmartTranslation}
+            label="Smart Translation"
+            description="Auto-detect and translate between French and American English"
           />
         </div>
+
+        {!smartTranslation && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <Select
+              label="Default Source Language"
+              options={LANGUAGES.map((lang) => ({
+                value: lang.code,
+                label: lang.name,
+              }))}
+              value={sourceLanguage}
+              onChange={setSourceLanguage}
+              fullWidth
+            />
+
+            <Select
+              label="Default Target Language"
+              options={LANGUAGES.filter((lang) => lang.code !== "auto").map(
+                (lang) => ({
+                  value: lang.code,
+                  label: lang.name,
+                })
+              )}
+              value={targetLanguage}
+              onChange={setTargetLanguage}
+              fullWidth
+            />
+          </div>
+        )}
 
         <div className="mb-4">
           <Toggle

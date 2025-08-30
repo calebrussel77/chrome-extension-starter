@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Copy, Mic, MicOff, Square, Volume2 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { speechToText, translateText } from "../services/api";
+import { speechToText, translateText, smartTranslateText } from "../services/api";
 import { addToHistory, getHistory } from "../services/storage";
 import { HistoryItem } from "../types";
 import Button from "./Button";
@@ -14,6 +14,7 @@ interface VoiceRecordingProps {
   isAutoTranslate: boolean;
   microphonePermission: boolean | null;
   customInstructions: string;
+  smartTranslation: boolean;
   onError: (error: string) => void;
   onInputTextChange: (text: string) => void;
   onTranslatedTextChange: (text: string) => void;
@@ -30,6 +31,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
   isAutoTranslate,
   microphonePermission,
   customInstructions,
+  smartTranslation,
   onError,
   onInputTextChange,
   onTranslatedTextChange,
@@ -139,13 +141,19 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
 
           // Auto-translate if enabled
           if (isAutoTranslate) {
-            const result = await translateText(
-              transcribedText,
-              sourceLanguage,
-              targetLanguage,
-              googleApiKey,
-              customInstructions
-            );
+            const result = smartTranslation
+              ? await smartTranslateText(
+                  transcribedText,
+                  googleApiKey,
+                  customInstructions
+                )
+              : await translateText(
+                  transcribedText,
+                  sourceLanguage,
+                  targetLanguage,
+                  googleApiKey,
+                  customInstructions
+                );
 
             if (result.error) {
               onError(result.error);
@@ -157,8 +165,8 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
                 type: "translation",
                 originalText: transcribedText,
                 translatedText: result.translatedText,
-                sourceLanguage,
-                targetLanguage,
+                sourceLanguage: smartTranslation ? "auto" : sourceLanguage,
+                targetLanguage: smartTranslation ? "auto" : targetLanguage,
               });
             }
           }

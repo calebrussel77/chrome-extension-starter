@@ -20,7 +20,7 @@ import Select from "../../components/Select";
 import Toggle from "../../components/Toggle";
 import VoiceRecording from "../../components/VoiceRecording";
 import { LANGUAGES } from "../../languages";
-import { translateText } from "../../services/api";
+import { translateText, smartTranslateText } from "../../services/api";
 import {
   addToHistory,
   clearHistory,
@@ -47,6 +47,7 @@ const Popup: React.FC = () => {
   const [isAutoTranslate, setIsAutoTranslate] = useState(true);
   const [enableAnimations, setEnableAnimations] = useState(true);
   const [customInstructions, setCustomInstructions] = useState("");
+  const [smartTranslation, setSmartTranslation] = useState(true);
   const [showCustomInstructions, setShowCustomInstructions] = useState(false);
   const [activeTab, setActiveTab] = useState<"translate" | "voice" | "history">(
     "translate"
@@ -70,6 +71,7 @@ const Popup: React.FC = () => {
         setIsAutoTranslate(config.autoTranslate);
         setEnableAnimations(config.enableAnimations);
         setCustomInstructions(config.customInstructions || "");
+        setSmartTranslation(config.smartTranslation ?? true);
         setShowCustomInstructions(
           !!(config.customInstructions && config.customInstructions.trim())
         );
@@ -102,6 +104,7 @@ const Popup: React.FC = () => {
           autoTranslate: isAutoTranslate,
           enableAnimations,
           customInstructions,
+          smartTranslation,
         });
       } catch (err) {
         console.error("Error saving config:", err);
@@ -117,6 +120,7 @@ const Popup: React.FC = () => {
     isAutoTranslate,
     enableAnimations,
     customInstructions,
+    smartTranslation,
   ]);
 
   // Check if a site is disabled
@@ -201,13 +205,19 @@ const Popup: React.FC = () => {
     setIsTranslating(true);
 
     try {
-      const result = await translateText(
-        inputText,
-        sourceLanguage,
-        targetLanguage,
-        googleApiKey,
-        customInstructions
-      );
+      const result = smartTranslation
+        ? await smartTranslateText(
+            inputText,
+            googleApiKey,
+            customInstructions
+          )
+        : await translateText(
+            inputText,
+            sourceLanguage,
+            targetLanguage,
+            googleApiKey,
+            customInstructions
+          );
 
       if (result.error) {
         setError(result.error);
@@ -219,8 +229,8 @@ const Popup: React.FC = () => {
           type: "translation",
           originalText: inputText,
           translatedText: result.translatedText,
-          sourceLanguage,
-          targetLanguage,
+          sourceLanguage: smartTranslation ? "auto" : sourceLanguage,
+          targetLanguage: smartTranslation ? "auto" : targetLanguage,
         });
 
         // Refresh history
@@ -370,46 +380,58 @@ const Popup: React.FC = () => {
         </button>
       </div>
 
-      {/* Language Selectors */}
-      <div className="flex gap-3 mb-5">
-        <Select
-          label="Source language"
-          options={LANGUAGES.map((lang) => ({
-            value: lang.code,
-            label: lang.name,
-          }))}
-          value={sourceLanguage}
-          onChange={setSourceLanguage}
-          fullWidth
-        />
-
-        <div className="flex items-center mt-6">
-          <button
-            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors duration-200"
-            onClick={() => {
-              const temp = sourceLanguage;
-              setSourceLanguage(targetLanguage);
-              setTargetLanguage(temp);
-            }}
-            title="Switch languages"
-          >
-            <ArrowLeftRight size={18} />
-          </button>
-        </div>
-
-        <Select
-          label="Target language"
-          options={LANGUAGES.filter((lang) => lang.code !== "auto").map(
-            (lang) => ({
-              value: lang.code,
-              label: lang.name,
-            })
-          )}
-          value={targetLanguage}
-          onChange={setTargetLanguage}
-          fullWidth
+      {/* Smart Translation Toggle */}
+      <div className="flex items-center justify-between mb-5 p-3 bg-gray-50 rounded-lg border border-gray-100">
+        <Toggle
+          checked={smartTranslation}
+          onChange={setSmartTranslation}
+          label="Smart Translation"
+          description="Auto-detect and translate between French and American English"
         />
       </div>
+
+      {/* Language Selectors (only shown when smart translation is off) */}
+      {!smartTranslation && (
+        <div className="flex gap-3 mb-5">
+          <Select
+            label="Source language"
+            options={LANGUAGES.map((lang) => ({
+              value: lang.code,
+              label: lang.name,
+            }))}
+            value={sourceLanguage}
+            onChange={setSourceLanguage}
+            fullWidth
+          />
+
+          <div className="flex items-center mt-6">
+            <button
+              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors duration-200"
+              onClick={() => {
+                const temp = sourceLanguage;
+                setSourceLanguage(targetLanguage);
+                setTargetLanguage(temp);
+              }}
+              title="Switch languages"
+            >
+              <ArrowLeftRight size={18} />
+            </button>
+          </div>
+
+          <Select
+            label="Target language"
+            options={LANGUAGES.filter((lang) => lang.code !== "auto").map(
+              (lang) => ({
+                value: lang.code,
+                label: lang.name,
+              })
+            )}
+            value={targetLanguage}
+            onChange={setTargetLanguage}
+            fullWidth
+          />
+        </div>
+      )}
 
       {/* Auto Translate Toggle */}
       <div className="flex items-center justify-between mb-5 p-3 bg-gray-50 rounded-lg border border-gray-100">
@@ -579,6 +601,7 @@ const Popup: React.FC = () => {
               isAutoTranslate={isAutoTranslate}
               microphonePermission={microphonePermission}
               customInstructions={customInstructions}
+              smartTranslation={smartTranslation}
               onError={setError}
               onInputTextChange={setInputText}
               onTranslatedTextChange={setTranslatedText}

@@ -104,6 +104,112 @@ export const translateText = async (
 };
 
 /**
+ * Smart translation that auto-detects and translates between French and American English
+ * @param text The text to translate
+ * @param googleApiKey The Google Gemini API key
+ * @param customInstructions Optional custom instructions to provide additional context for translation
+ * @returns A promise that resolves to the translation response
+ */
+export const smartTranslateText = async (
+  text: string,
+  googleApiKey: string,
+  customInstructions?: string
+): Promise<TranslationResponse> => {
+  try {
+    if (!googleApiKey) {
+      throw new Error("Google API key is required");
+    }
+
+    if (!text || text.trim() === "") {
+      throw new Error("Text is required");
+    }
+
+    const genAI = new GoogleGenAI({
+      apiKey: googleApiKey,
+    });
+
+    // Smart translation system prompt
+    let systemPrompt = dedent`
+    You are an expert translator specializing in French and American English with deep knowledge of modern slang, abbreviations, and cultural expressions.
+    
+    Your task is to:
+    1. Auto-detect the language of the provided text
+    2. If the text is in French, translate it to American English
+    3. If the text is in American English (or any English variant), translate it to French
+    4. If the text is in neither French nor English, translate it to American English
+    
+    CRITICAL - American Expressions & Abbreviations Knowledge:
+    You must properly understand and translate common American expressions, slang, and abbreviations including but not limited to:
+    
+    Common abbreviations: btw (by the way), tbd (to be determined), tldr (too long didn't read), imo/imho (in my opinion/humble), fyi (for your information), asap (as soon as possible), aka (also known as), etc (et cetera), nvm (never mind), omg (oh my god), lol (laugh out loud), brb (be right back), ttyl (talk to you later), irl (in real life), jk (just kidding), smh (shaking my head), rn (right now), tbh (to be honest), idk (I don't know), ikr (I know right), dm (direct message), rt (retweet), af (as f***), wth/wtf (what the hell/f***), gg (good game), ez (easy), op (original poster/overpowered)
+    
+    Slang terms: dude, bro, man, guys (when addressing people), cool, awesome, sick (meaning good), fire (excellent), lit (amazing), salty (upset), flex (show off), vibe/vibes, squad, fam, bestie, sus (suspicious), cap/no cap (lie/truth), periodt, slay, stan, ghost/ghosting, simp, karen, based, cringe, chad, boomer, zoomer, millennial, gen z, mood, bet (yes/agreed), facts, lowkey/highkey, deadass, fr/for real, no shot, mid (mediocre), bussin (excellent), slaps (sounds good), hits different, rent free, living for it, that's on me, my bad, catch these hands, spill the tea, throwing shade, coming for someone, pressed, triggered, woke, canceled, problematic, valid, chief (as in "this ain't it chief"), it's giving (it seems like), purr, and period/periodT
+    
+    Contextual expressions: "I'm dead" (very funny), "that's fire" (that's great), "no cap" (no lie), "it hits different" (it's uniquely good), "that's sus" (suspicious), "living rent free in my head" (can't stop thinking about it), "spill the tea" (tell me the gossip), "throwing shade" (subtle insult), "that's a vibe" (good feeling), "sending me" (making me laugh), "I can't even" (overwhelmed), "this slaps" (this is great), "lowkey/highkey" (somewhat/definitely), "periodt" (end of discussion), "we stan" (we support), "it's giving..." (it seems like/reminds me of)
+    
+    Important translation guidelines:
+    - The current time is ${new Date().toLocaleString()} (${
+      Intl.DateTimeFormat().resolvedOptions().timeZone
+    } timezone).
+    - Preserve any technical terms, code snippets, variable names, or keywords that appear in the original text, especially those related to programming or web development. Do not translate these specific elements.
+    - For American English translations, use American spelling, vocabulary, and expressions
+    - For French translations, use standard French grammar and vocabulary, adapting slang appropriately to French equivalents when possible
+    - When translating American slang to French, find the most natural French equivalent rather than literal translation
+    - When translating abbreviations, either expand them in the target language or use equivalent abbreviations if they exist
+    - Provide ONLY the translated text as your response, without any additional commentary, explanations, or formatting.
+    - Do not include phrases like "Here is the translation:" or similar - just provide the direct translation.
+    `;
+
+    // Add custom instructions if provided
+    if (customInstructions && customInstructions.trim()) {
+      systemPrompt += dedent`
+      
+      <important-rules>
+        The following instructions take precedence over the base translation rules:
+        ${customInstructions.trim()}
+      </important-rules>
+      `;
+    }
+
+    // Create the full prompt combining system instructions and user text
+    const fullPrompt = `${systemPrompt}\n\nText to translate:\n${text}`;
+
+    const response = await genAI.models.generateContent({
+      model: "gemini-2.5-flash-preview-05-20", // Using Gemini 2.5 Flash for fast translation
+      contents: fullPrompt,
+      config: {
+        temperature: 0.3, // Keep temperature low for more deterministic translation
+        maxOutputTokens: 2048,
+      },
+    });
+
+    // Extract the translated text
+    const translatedText = response.text?.trim() ?? "";
+
+    return {
+      translatedText: translatedText,
+      detectedLanguage: "auto-detected", // We let the AI determine the source language
+    };
+  } catch (error) {
+    console.error("Smart translation error:", error);
+
+    if (error instanceof Error) {
+      // Handle standard JavaScript errors
+      return {
+        translatedText: "",
+        error: `Smart translation failed: ${error.message}`,
+      };
+    } else {
+      // Handle unexpected errors
+      return {
+        translatedText: "",
+        error: "An unknown error occurred during smart translation.",
+      };
+    }
+  }
+};
+
+/**
  * Converts speech to text using OpenAI's API
  * @param audioBlob The audio blob to transcribe
  * @param openaiApiKey The OpenAI API key

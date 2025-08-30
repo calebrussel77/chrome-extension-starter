@@ -1,4 +1,4 @@
-import { translateText } from "./services/api";
+import { translateText, smartTranslateText } from "./services/api";
 import {
   addToHistory,
   getConfig,
@@ -139,20 +139,27 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         originalText: info.selectionText,
       });
 
-      const result = await translateText(
-        info.selectionText,
-        config.sourceLanguage,
-        config.targetLanguage,
-        config.googleApiKey
-      );
+      const result = config.smartTranslation
+        ? await smartTranslateText(
+            info.selectionText,
+            config.googleApiKey,
+            config.customInstructions
+          )
+        : await translateText(
+            info.selectionText,
+            config.sourceLanguage,
+            config.targetLanguage,
+            config.googleApiKey,
+            config.customInstructions
+          );
 
       // Add to history
       await addToHistory({
         type: "translation",
         originalText: info.selectionText,
         translatedText: result.translatedText ?? "",
-        sourceLanguage: config.sourceLanguage,
-        targetLanguage: config.targetLanguage,
+        sourceLanguage: config.smartTranslation ? "auto" : config.sourceLanguage,
+        targetLanguage: config.smartTranslation ? "auto" : config.targetLanguage,
       });
 
       // Send translation result to content script
@@ -258,20 +265,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           message as TranslateSelectionMessage;
         
         const config = await getConfig();
-        const result = await translateText(
-          text,
-          sourceLanguage,
-          targetLanguage,
-          config.googleApiKey
-        );
+        const result = config.smartTranslation
+          ? await smartTranslateText(
+              text,
+              config.googleApiKey,
+              config.customInstructions
+            )
+          : await translateText(
+              text,
+              sourceLanguage,
+              targetLanguage,
+              config.googleApiKey,
+              config.customInstructions
+            );
 
         // Add to history
         await addToHistory({
           type: "translation",
           originalText: text,
           translatedText: result.translatedText ?? "",
-          sourceLanguage,
-          targetLanguage,
+          sourceLanguage: config.smartTranslation ? "auto" : sourceLanguage,
+          targetLanguage: config.smartTranslation ? "auto" : targetLanguage,
         });
 
         sendResponse(result);

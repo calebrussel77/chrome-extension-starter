@@ -10,6 +10,7 @@ export type ExtensionConfig = {
   autoTranslate: boolean;
   enableAnimations: boolean;
   customInstructions: string;
+  smartTranslation: boolean;
   history: HistoryItem[];
 };
 
