@@ -1,15 +1,47 @@
+/* Popup-specific styling for development preview */
 .content {
   max-width: 1200px;
   display: flex;
   margin: auto;
-  padding: 10px;
-  flex-direction: row;
-  justify-content: space-between;
+  padding: 20px;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
 .content-text {
   color: white;
-  font-size: large;
+  font-size: medium;
   font-weight: 500;
-  padding: 30px 50px 0 0;
+  text-align: center;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+/* Create a popup-like container */
+.root {
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  max-width: 450px;
+  width: 100%;
+}
+
+/* Ensure dark mode works properly */
+.root > div {
+  min-height: 540px;
+}
+
+/* Make it look like a Chrome extension popup */
+@media (max-width: 500px) {
+  .content {
+    padding: 10px;
+  }
+  
+  .root {
+    max-width: 100%;
+    margin: 0 10px;
+  }
 }

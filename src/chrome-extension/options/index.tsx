@@ -1,10 +1,13 @@
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import Button from "../../components/Button";
-import Input from "../../components/Input";
-import Select from "../../components/Select";
-import Toggle from "../../components/Toggle";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeToggleWithLabel } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LANGUAGES, SMART_TRANSLATION_PRESETS } from "../../languages";
 import {
   getConfig,
@@ -13,10 +16,15 @@ import {
   updateConfig,
 } from "../../services/storage";
 import { SmartTranslationConfig } from "../../types";
+import { useTheme } from "next-themes";
 
+// Import mock Chrome APIs for development
+import "../../dev-mock-chrome";
 import "../../chrome-extension/global.css";
 
-const Options = () => {
+const OptionsContent = () => {
+  const { theme, setTheme } = useTheme();
+  
   // State
   const [googleApiKey, setGoogleApiKey] = useState("");
   const [openaiApiKey, setOpenaiApiKey] = useState("");
@@ -64,6 +72,11 @@ const Options = () => {
           fallbackLanguage: "en"
         });
         
+        // Set theme from config
+        if (config.theme) {
+          setTheme(config.theme);
+        }
+        
         // Find matching preset or set custom
         const matchingPreset = SMART_TRANSLATION_PRESETS.find(preset => 
           preset.config.primaryLanguage === (config.smartTranslationConfig?.primaryLanguage || "fr") &&
@@ -88,13 +101,19 @@ const Options = () => {
 
     loadConfig();
     checkMicrophonePermission();
-  }, []);
+  }, [setTheme]);
+
+  // Save theme when it changes
+  useEffect(() => {
+    if (theme) {
+      updateConfig({ theme: theme as "light" | "dark" | "system" }).catch(console.error);
+    }
+  }, [theme]);
 
   // Check microphone permission
   const checkMicrophonePermission = async () => {
     setMicPermission("checking");
     try {
-      // First check if we have stored the permission
       const storedPermission = await getMicrophonePermission();
 
       if (navigator.permissions) {
@@ -107,14 +126,12 @@ const Options = () => {
           | "prompt";
         setMicPermission(currentState);
 
-        // Update stored permission if it's granted
         if (currentState === "granted") {
           await setMicrophonePermission(true);
         } else if (currentState === "denied") {
           await setMicrophonePermission(false);
         }
 
-        // Listen for permission changes
         permissionStatus.addEventListener("change", async () => {
           const newState = permissionStatus.state as
             | "granted"
@@ -129,10 +146,8 @@ const Options = () => {
           }
         });
       } else if (storedPermission) {
-        // If Permissions API is not available but we have stored permission
         setMicPermission("granted");
       } else {
-        // Fallback if Permissions API is not available
         setMicPermission("prompt");
       }
     } catch (err) {
@@ -145,7 +160,6 @@ const Options = () => {
   const requestMicrophonePermission = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Stop all tracks immediately to not keep the microphone active
       stream.getTracks().forEach((track) => track.stop());
       setMicPermission("granted");
       await setMicrophonePermission(true);
@@ -162,7 +176,6 @@ const Options = () => {
   const testMicrophone = async () => {
     setIsMicTesting(true);
     try {
-      // First ensure we have permission
       const hasPermission =
         micPermission === "granted" || (await requestMicrophonePermission());
       if (!hasPermission) {
@@ -179,17 +192,14 @@ const Options = () => {
         },
       });
 
-      // Create audio feedback element
       const audioFeedback = new Audio();
       audioFeedback.srcObject = stream;
       audioFeedback.play();
 
-      // Create media recorder
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
-      // Set up event handlers
       mediaRecorder.ondataavailable = (event) => {
         audioChunksRef.current.push(event.data);
       };
@@ -198,7 +208,6 @@ const Options = () => {
         audioFeedback.pause();
         audioFeedback.srcObject = null;
 
-        // Create audio playback from recorded chunks
         const audioBlob = new Blob(audioChunksRef.current, {
           type: "audio/webm",
         });
@@ -206,12 +215,10 @@ const Options = () => {
         const audio = new Audio(audioUrl);
         audio.play();
 
-        // Clean up
         stream.getTracks().forEach((track) => track.stop());
         setIsMicTesting(false);
       };
 
-      // Start recording for 3 seconds
       mediaRecorder.start();
       setTimeout(() => {
         if (mediaRecorder.state !== "inactive") {
@@ -228,7 +235,6 @@ const Options = () => {
     }
   };
 
-  // Cancel microphone test
   const cancelMicTest = () => {
     if (
       mediaRecorderRef.current &&
@@ -255,11 +261,10 @@ const Options = () => {
         smartTranslation,
         smartTranslationConfig,
         disabledSites,
+        theme: theme as "light" | "dark" | "system",
       });
 
       setSaveSuccess(true);
-
-      // Reset success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false);
       }, 3000);
@@ -276,10 +281,8 @@ const Options = () => {
     if (!newSite) return;
 
     try {
-      // Simple URL validation
       let hostname = newSite;
 
-      // Try to extract hostname from URL if full URL is provided
       try {
         const url = new URL(
           newSite.startsWith("http") ? newSite : `https://${newSite}`
@@ -333,7 +336,7 @@ const Options = () => {
       return (
         <div className="flex items-center">
           <div className="w-4 h-4 rounded-full bg-yellow-500 animate-pulse mr-2"></div>
-          <span className="text-sm text-yellow-600">
+          <span className="text-sm text-muted-foreground">
             Checking microphone permission...
           </span>
         </div>
@@ -360,7 +363,7 @@ const Options = () => {
       return (
         <div className="flex items-center">
           <div className="w-4 h-4 rounded-full bg-yellow-500 mr-2"></div>
-          <span className="text-sm text-yellow-600">
+          <span className="text-sm text-muted-foreground">
             Microphone permission not yet requested
           </span>
         </div>
@@ -369,362 +372,417 @@ const Options = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
       <header className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <img
-            src="/public/48.png"
-            alt="AI Translator Pro"
-            className="w-10 h-10"
-          />
-          <h1 className="text-2xl font-bold">AI Translator Pro - Settings</h1>
-        </div>
-        <p className="text-gray-600">
-          Configure your API keys and customize translation options.
-        </p>
-      </header>
-
-      {/* API Key Section */}
-      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
-        <h2 className="text-lg font-medium mb-4">API Keys</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Set up your API keys to access AI features.
-        </p>
-
-        <div className="mb-4">
-          <Input
-            label="Google API Key"
-            value={googleApiKey}
-            onChange={setGoogleApiKey}
-            fullWidth
-            type="password"
-            placeholder="Enter your Google API key..."
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Get your API key from{" "}
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              Google AI Studio
-            </a>{" "}
-            (for translation)
-          </p>
-        </div>
-
-        <div className="mb-4">
-          <Input
-            label="OpenAI API Key"
-            value={openaiApiKey}
-            onChange={setOpenaiApiKey}
-            fullWidth
-            type="password"
-            placeholder="Enter your OpenAI API key..."
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Get your API key from{" "}
-            <a
-              href="https://platform.openai.com/api-keys"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              OpenAI Platform
-            </a>{" "}
-            (for speech-to-text)
-          </p>
-        </div>
-      </section>
-
-      {/* Microphone Permission Section */}
-      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
-        <h2 className="text-lg font-medium mb-4">Microphone Access</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Grant microphone access to use voice-to-text features.
-        </p>
-
-        <div className="mb-4">{getPermissionStatusUI()}</div>
-
-        <div className="flex space-x-2">
-          {micPermission !== "granted" && (
-            <Button
-              variant="primary"
-              onClick={requestMicrophonePermission}
-              disabled={micPermission === "checking"}
-            >
-              Allow Microphone Access
-            </Button>
-          )}
-
-          <Button
-            variant={isMicTesting ? "secondary" : "outline"}
-            onClick={isMicTesting ? cancelMicTest : testMicrophone}
-            disabled={
-              micPermission === "denied" || micPermission === "checking"
-            }
-          >
-            {isMicTesting ? "Stop Test" : "Test Microphone"}
-          </Button>
-        </div>
-
-        {isMicTesting && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-100">
-            <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse mr-2"></div>
-              <p className="text-sm text-blue-700">
-                Recording in progress... Speak now to test your microphone.
-                You'll hear your recording after 3 seconds.
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <img
+              src="/public/48.png"
+              alt="AI Translator Pro"
+              className="w-10 h-10"
+            />
+            <div>
+              <h1 className="text-3xl font-bold">AI Translator Pro</h1>
+              <p className="text-muted-foreground">
+                Configure your API keys and customize translation options.
               </p>
             </div>
           </div>
-        )}
-      </section>
-
-      {/* Translation Options */}
-      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
-        <h2 className="text-lg font-medium mb-4">Translation Options</h2>
-
-        <div className="mb-4">
-          <Toggle
-            checked={smartTranslation}
-            onChange={setSmartTranslation}
-            label="Smart Translation"
-            description="Auto-detect and translate between French and American English"
-          />
+          <ThemeToggleWithLabel />
         </div>
+      </header>
 
-        {!smartTranslation && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <Select
-              label="Default Source Language"
-              options={LANGUAGES.map((lang) => ({
-                value: lang.code,
-                label: lang.name,
-              }))}
-              value={sourceLanguage}
-              onChange={setSourceLanguage}
-              fullWidth
-            />
-
-            <Select
-              label="Default Target Language"
-              options={LANGUAGES.filter((lang) => lang.code !== "auto").map(
-                (lang) => ({
-                  value: lang.code,
-                  label: lang.name,
-                })
-              )}
-              value={targetLanguage}
-              onChange={setTargetLanguage}
-              fullWidth
-            />
-          </div>
-        )}
-
-        <div className="mb-4">
-          <Toggle
-            checked={isAutoTranslate}
-            onChange={setIsAutoTranslate}
-            label="Automatic Translation"
-            description="Automatically translate selected text"
-          />
-        </div>
-
-        <div className="mb-4">
-          <Toggle
-            checked={enableAnimations}
-            onChange={setEnableAnimations}
-            label="Enable Animations"
-            description="Enable UI animations"
-          />
-        </div>
-      </section>
-
-      {/* Smart Translation Configuration */}
-      {smartTranslation && (
-        <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
-          <h2 className="text-lg font-medium mb-4">Smart Translation Configuration</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Configure which languages your smart translation should handle automatically.
-          </p>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Choose a Preset or Custom Configuration
-            </label>
-            
-            {/* Preset Selection */}
-            <div className="grid gap-3 mb-4">
-              {SMART_TRANSLATION_PRESETS.map((preset) => (
-                <label key={preset.id} className="flex items-start p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="smartTranslationPreset"
-                    value={preset.id}
-                    checked={selectedPreset === preset.id}
-                    onChange={(e) => handlePresetChange(e.target.value)}
-                    className="mt-1 mr-3"
-                  />
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">{preset.name}</div>
-                    <div className="text-sm text-gray-600">{preset.description}</div>
-                  </div>
-                </label>
-              ))}
-              
-              {/* Custom Option */}
-              <label className="flex items-start p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="radio"
-                  name="smartTranslationPreset"
-                  value="custom"
-                  checked={selectedPreset === "custom"}
-                  onChange={(e) => handlePresetChange(e.target.value)}
-                  className="mt-1 mr-3"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900">Custom Configuration</div>
-                  <div className="text-sm text-gray-600">Configure your own language pair</div>
-                </div>
+      <div className="grid gap-6">
+        {/* API Keys Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>API Configuration</CardTitle>
+            <CardDescription>
+              Set up your API keys to access AI features.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label htmlFor="googleApi" className="text-sm font-medium mb-2 block">
+                Google API Key
               </label>
+              <Input
+                id="googleApi"
+                type="password"
+                value={googleApiKey}
+                onChange={(e) => setGoogleApiKey(e.target.value)}
+                placeholder="Enter your Google API key..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Get your API key from{" "}
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Google AI Studio
+                </a>{" "}
+                (for translation)
+              </p>
             </div>
 
-            {/* Custom Configuration UI */}
-            {customSmartTranslation && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200"
+            <div>
+              <label htmlFor="openaiApi" className="text-sm font-medium mb-2 block">
+                OpenAI API Key
+              </label>
+              <Input
+                id="openaiApi"
+                type="password"
+                value={openaiApiKey}
+                onChange={(e) => setOpenaiApiKey(e.target.value)}
+                placeholder="Enter your OpenAI API key..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Get your API key from{" "}
+                <a
+                  href="https://platform.openai.com/api-keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  OpenAI Platform
+                </a>{" "}
+                (for speech-to-text)
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Microphone Permission Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Microphone Access</CardTitle>
+            <CardDescription>
+              Grant microphone access to use voice-to-text features.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>{getPermissionStatusUI()}</div>
+
+            <div className="flex space-x-2">
+              {micPermission !== "granted" && (
+                <Button
+                  onClick={requestMicrophonePermission}
+                  disabled={micPermission === "checking"}
+                >
+                  Allow Microphone Access
+                </Button>
+              )}
+
+              <Button
+                variant={isMicTesting ? "secondary" : "outline"}
+                onClick={isMicTesting ? cancelMicTest : testMicrophone}
+                disabled={
+                  micPermission === "denied" || micPermission === "checking"
+                }
               >
-                <h3 className="font-medium text-gray-900 mb-3">Custom Language Configuration</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Primary Language
-                    </label>
-                    <Select
-                      options={LANGUAGES.filter(lang => lang.code !== "auto").map(lang => ({
-                        value: lang.code,
-                        label: lang.name,
-                      }))}
-                      value={smartTranslationConfig.primaryLanguage}
-                      onChange={(value) => handleSmartTranslationConfigChange("primaryLanguage", value)}
-                      fullWidth
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Your main working language</p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Secondary Language
-                    </label>
-                    <Select
-                      options={LANGUAGES.filter(lang => lang.code !== "auto").map(lang => ({
-                        value: lang.code,
-                        label: lang.name,
-                      }))}
-                      value={smartTranslationConfig.secondaryLanguage}
-                      onChange={(value) => handleSmartTranslationConfigChange("secondaryLanguage", value)}
-                      fullWidth
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Language to translate to/from</p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Fallback Language
-                    </label>
-                    <Select
-                      options={LANGUAGES.filter(lang => lang.code !== "auto").map(lang => ({
-                        value: lang.code,
-                        label: lang.name,
-                      }))}
-                      value={smartTranslationConfig.fallbackLanguage}
-                      onChange={(value) => handleSmartTranslationConfigChange("fallbackLanguage", value)}
-                      fullWidth
-                    />
-                    <p className="text-xs text-gray-500 mt-1">For unrecognized languages</p>
-                  </div>
-                </div>
-                
-                <div className="mt-3 p-3 bg-white rounded border border-blue-300">
-                  <p className="text-sm text-blue-800">
-                    <strong>How it works:</strong> Text in your primary language gets translated to your secondary language, 
-                    and vice versa. Any other language gets translated to your fallback language.
+                {isMicTesting ? "Stop Test" : "Test Microphone"}
+              </Button>
+            </div>
+
+            {isMicTesting && (
+              <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse mr-2"></div>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Recording in progress... Speak now to test your microphone.
+                    You'll hear your recording after 3 seconds.
                   </p>
                 </div>
-              </motion.div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Disabled Sites */}
-      <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 transition-all hover:shadow-md">
-        <h2 className="text-lg font-medium mb-4">Disabled Websites</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          The extension will not work on these websites.
-        </p>
-
-        <div className="flex gap-2 mb-4">
-          <Input
-            value={newSite}
-            onChange={setNewSite}
-            placeholder="example.com"
-            fullWidth
-          />
-
-          <Button onClick={addDisabledSite} disabled={!newSite}>
-            Add
-          </Button>
-        </div>
-
-        <div className="space-y-2">
-          {disabledSites.length === 0 ? (
-            <p className="text-sm text-gray-500">No disabled websites</p>
-          ) : (
-            disabledSites.map((site) => (
-              <div
-                key={site}
-                className="flex items-center justify-between p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
-              >
-                <span className="text-sm">{site}</span>
-                <button
-                  onClick={() => removeDisabledSite(site)}
-                  className="text-red-600 hover:text-red-800 transition-colors p-1 rounded-full hover:bg-red-50"
-                  title="Remove website"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
-                    />
-                  </svg>
-                </button>
               </div>
-            ))
-          )}
-        </div>
-      </section>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Translation Options */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Translation Settings</CardTitle>
+            <CardDescription>
+              Configure how translations are handled.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Smart Translation</label>
+                <p className="text-xs text-muted-foreground">
+                  Auto-detect and translate between your configured languages
+                </p>
+              </div>
+              <Switch
+                checked={smartTranslation}
+                onCheckedChange={setSmartTranslation}
+              />
+            </div>
+
+            {!smartTranslation && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Default Source Language
+                  </label>
+                  <Select value={sourceLanguage} onValueChange={setSourceLanguage}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Default Target Language
+                  </label>
+                  <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGES.filter((lang) => lang.code !== "auto").map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Automatic Translation</label>
+                <p className="text-xs text-muted-foreground">
+                  Automatically translate selected text
+                </p>
+              </div>
+              <Switch
+                checked={isAutoTranslate}
+                onCheckedChange={setIsAutoTranslate}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Enable Animations</label>
+                <p className="text-xs text-muted-foreground">
+                  Enable UI animations for better experience
+                </p>
+              </div>
+              <Switch
+                checked={enableAnimations}
+                onCheckedChange={setEnableAnimations}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Smart Translation Configuration */}
+        {smartTranslation && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Smart Translation Configuration</CardTitle>
+              <CardDescription>
+                Configure which languages your smart translation should handle automatically.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <label className="text-sm font-medium mb-3 block">
+                  Choose a Preset or Custom Configuration
+                </label>
+                
+                <div className="grid gap-3 mb-4">
+                  {SMART_TRANSLATION_PRESETS.map((preset) => (
+                    <label key={preset.id} className="flex items-start p-3 border rounded-lg hover:bg-accent cursor-pointer">
+                      <input
+                        type="radio"
+                        name="smartTranslationPreset"
+                        value={preset.id}
+                        checked={selectedPreset === preset.id}
+                        onChange={(e) => handlePresetChange(e.target.value)}
+                        className="mt-1 mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium">{preset.name}</div>
+                        <div className="text-sm text-muted-foreground">{preset.description}</div>
+                      </div>
+                    </label>
+                  ))}
+                  
+                  <label className="flex items-start p-3 border rounded-lg hover:bg-accent cursor-pointer">
+                    <input
+                      type="radio"
+                      name="smartTranslationPreset"
+                      value="custom"
+                      checked={selectedPreset === "custom"}
+                      onChange={(e) => handlePresetChange(e.target.value)}
+                      className="mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium">Custom Configuration</div>
+                      <div className="text-sm text-muted-foreground">Configure your own language pair</div>
+                    </div>
+                  </label>
+                </div>
+
+                {customSmartTranslation && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-4 bg-muted rounded-lg border"
+                  >
+                    <h3 className="font-medium mb-3">Custom Language Configuration</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Primary Language
+                        </label>
+                        <Select
+                          value={smartTranslationConfig.primaryLanguage}
+                          onValueChange={(value) => handleSmartTranslationConfigChange("primaryLanguage", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LANGUAGES.filter(lang => lang.code !== "auto").map(lang => (
+                              <SelectItem key={lang.code} value={lang.code}>
+                                {lang.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">Your main working language</p>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Secondary Language
+                        </label>
+                        <Select
+                          value={smartTranslationConfig.secondaryLanguage}
+                          onValueChange={(value) => handleSmartTranslationConfigChange("secondaryLanguage", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LANGUAGES.filter(lang => lang.code !== "auto").map(lang => (
+                              <SelectItem key={lang.code} value={lang.code}>
+                                {lang.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">Language to translate to/from</p>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Fallback Language
+                        </label>
+                        <Select
+                          value={smartTranslationConfig.fallbackLanguage}
+                          onValueChange={(value) => handleSmartTranslationConfigChange("fallbackLanguage", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LANGUAGES.filter(lang => lang.code !== "auto").map(lang => (
+                              <SelectItem key={lang.code} value={lang.code}>
+                                {lang.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">For unrecognized languages</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 p-3 bg-background rounded border">
+                      <p className="text-sm">
+                        <strong>How it works:</strong> Text in your primary language gets translated to your secondary language, 
+                        and vice versa. Any other language gets translated to your fallback language.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Disabled Sites */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Disabled Websites</CardTitle>
+            <CardDescription>
+              The extension will not work on these websites.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                value={newSite}
+                onChange={(e) => setNewSite(e.target.value)}
+                placeholder="example.com"
+                className="flex-1"
+              />
+              <Button onClick={addDisabledSite} disabled={!newSite}>
+                Add
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {disabledSites.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No disabled websites</p>
+              ) : (
+                disabledSites.map((site) => (
+                  <div
+                    key={site}
+                    className="flex items-center justify-between p-2 bg-muted rounded-md"
+                  >
+                    <span className="text-sm">{site}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeDisabledSite(site)}
+                      className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                      title="Remove website"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Save Button */}
-      <div className="w-full flex justify-end items-center gap-4">
+      <div className="mt-8 flex justify-end items-center gap-4">
         {error && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-red-600"
+            className="text-destructive text-sm"
           >
             {error}
           </motion.p>
@@ -734,21 +792,34 @@ const Options = () => {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-green-600"
+            className="text-green-600 text-sm"
           >
             Settings saved successfully!
           </motion.p>
         )}
+        
         <Button
-          variant="primary"
-          size="lg"
           onClick={saveConfig}
-          isLoading={isSaving}
+          disabled={isSaving}
+          size="lg"
         >
-          Save Settings
+          {isSaving ? "Saving..." : "Save Settings"}
         </Button>
       </div>
     </div>
+  );
+};
+
+const Options = () => {
+  return (
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <OptionsContent />
+    </ThemeProvider>
   );
 };
 

@@ -14,10 +14,13 @@ import {
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import Button from "../../components/Button";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import HistoryTab from "../../components/HistoryTab";
-import Select from "../../components/Select";
-import Toggle from "../../components/Toggle";
 import VoiceRecording from "../../components/VoiceRecording";
 import { LANGUAGES } from "../../languages";
 import { translateText, smartTranslateText } from "../../services/api";
@@ -31,10 +34,15 @@ import {
   updateConfig,
 } from "../../services/storage";
 import { HistoryItem, MessageType, SmartTranslationConfig } from "../../types";
+import { useTheme } from "next-themes";
 
+// Import mock Chrome APIs for development
+import "../../dev-mock-chrome";
 import "../../chrome-extension/global.css";
 
-const Popup: React.FC = () => {
+const PopupContent: React.FC = () => {
+  const { theme, setTheme } = useTheme();
+  
   // State
   const [googleApiKey, setGoogleApiKey] = useState("");
   const [openaiApiKey, setOpenaiApiKey] = useState("");
@@ -86,6 +94,11 @@ const Popup: React.FC = () => {
           !!(config.customInstructions && config.customInstructions.trim())
         );
 
+        // Set theme from config
+        if (config.theme) {
+          setTheme(config.theme);
+        }
+
         // Load history
         const historyItems = await getHistory();
         setHistory(historyItems);
@@ -100,7 +113,7 @@ const Popup: React.FC = () => {
     };
 
     loadConfig();
-  }, []);
+  }, [setTheme]);
 
   // Save config when values change
   useEffect(() => {
@@ -116,13 +129,16 @@ const Popup: React.FC = () => {
           customInstructions,
           smartTranslation,
           smartTranslationConfig,
+          theme: theme as "light" | "dark" | "system",
         });
       } catch (err) {
         console.error("Error saving config:", err);
       }
     };
 
-    saveConfig();
+    if (theme) {
+      saveConfig();
+    }
   }, [
     googleApiKey,
     openaiApiKey,
@@ -133,6 +149,7 @@ const Popup: React.FC = () => {
     customInstructions,
     smartTranslation,
     smartTranslationConfig,
+    theme,
   ]);
 
   // Check if a site is disabled
@@ -289,363 +306,375 @@ const Popup: React.FC = () => {
   };
 
   return (
-    <div className="min-w-[450px] min-h-[540px] p-5 bg-white text-gray-900 shadow-sm rounded-lg">
-      <header className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <img
-            src="/public/48.png"
-            alt="AI Translator Pro"
-            className="w-8 h-8 rounded-md shadow-sm"
-          />
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            AI Translator Pro
-          </h1>
-        </div>
-
-        <a
-          href="options.html"
-          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors duration-200"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Settings"
-        >
-          <Settings size={20} />
-        </a>
-      </header>
-
-      {/* API Key Warning */}
-      {(!googleApiKey || !openaiApiKey) && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-5 shadow-sm"
-        >
-          <div className="flex items-start">
-            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div className="ml-3">
-              <p className="text-sm text-amber-800">
-                Please configure your API keys in the settings.
-                {!googleApiKey &&
-                  " Google API key is required for translation."}
-                {!openaiApiKey &&
-                  " OpenAI API key is required for voice features."}
-              </p>
+    <div className="w-[450px] min-h-[540px] bg-background text-foreground">
+      <Card className="h-full border-0 rounded-none shadow-none">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img
+                src="/public/48.png"
+                alt="AI Translator Pro"
+                className="w-8 h-8 rounded-md"
+              />
+              <CardTitle className="text-xl bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                AI Translator Pro
+              </CardTitle>
             </div>
-          </div>
-        </motion.div>
-      )}
 
-      {/* Site Status */}
-      {currentSite && (
-        <div className="flex items-center justify-between mb-5 p-3 bg-gray-50 rounded-lg border border-gray-100">
-          <div className="flex items-center gap-2">
-            <Info size={16} className="text-gray-500" />
-            <div className="text-sm text-gray-600">
-              Current site: <span className="font-medium">{currentSite}</span>
-            </div>
-          </div>
-
-          <Toggle
-            checked={!isSiteDisabled}
-            onChange={() => toggleSiteDisabled()}
-            size="sm"
-            label={isSiteDisabled ? "Enable" : "Disable"}
-          />
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="flex mb-5 border-b border-gray-200">
-        <button
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 flex items-center gap-2 ${
-            activeTab === "translate"
-              ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-              : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-          }`}
-          onClick={() => setActiveTab("translate")}
-        >
-          <Globe size={16} />
-          Translate
-        </button>
-
-        <button
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 flex items-center gap-2 ${
-            activeTab === "voice"
-              ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-              : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-          }`}
-          onClick={() => setActiveTab("voice")}
-        >
-          <Mic size={16} />
-          Voice to Text
-        </button>
-
-        <button
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 flex items-center gap-2 ${
-            activeTab === "history"
-              ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-              : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-          }`}
-          onClick={() => setActiveTab("history")}
-        >
-          <History size={16} />
-          History
-        </button>
-      </div>
-
-      {/* Smart Translation Toggle */}
-      <div className="flex items-center justify-between mb-5 p-3 bg-gray-50 rounded-lg border border-gray-100">
-        <Toggle
-          checked={smartTranslation}
-          onChange={setSmartTranslation}
-          label="Smart Translation"
-          description={`Auto-detect and translate between ${
-            LANGUAGES.find(lang => lang.code === smartTranslationConfig.primaryLanguage)?.name || smartTranslationConfig.primaryLanguage
-          } and ${
-            LANGUAGES.find(lang => lang.code === smartTranslationConfig.secondaryLanguage)?.name || smartTranslationConfig.secondaryLanguage
-          }`}
-        />
-      </div>
-
-      {/* Language Selectors (only shown when smart translation is off) */}
-      {!smartTranslation && (
-        <div className="flex gap-3 mb-5">
-          <Select
-            label="Source language"
-            options={LANGUAGES.map((lang) => ({
-              value: lang.code,
-              label: lang.name,
-            }))}
-            value={sourceLanguage}
-            onChange={setSourceLanguage}
-            fullWidth
-          />
-
-          <div className="flex items-center mt-6">
-            <button
-              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors duration-200"
-              onClick={() => {
-                const temp = sourceLanguage;
-                setSourceLanguage(targetLanguage);
-                setTargetLanguage(temp);
-              }}
-              title="Switch languages"
+            <a
+              href="options.html"
+              className="p-2 text-muted-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Settings"
             >
-              <ArrowLeftRight size={18} />
-            </button>
+              <Settings size={18} />
+            </a>
           </div>
+        </CardHeader>
 
-          <Select
-            label="Target language"
-            options={LANGUAGES.filter((lang) => lang.code !== "auto").map(
-              (lang) => ({
-                value: lang.code,
-                label: lang.name,
-              })
-            )}
-            value={targetLanguage}
-            onChange={setTargetLanguage}
-            fullWidth
-          />
-        </div>
-      )}
-
-      {/* Auto Translate Toggle */}
-      <div className="flex items-center justify-between mb-5 p-3 bg-gray-50 rounded-lg border border-gray-100">
-        <Toggle
-          checked={isAutoTranslate}
-          onChange={setIsAutoTranslate}
-          label="Automatic translation"
-          description="Automatically translate selected text"
-        />
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-red-50 border border-red-200 rounded-lg p-3 mb-5 shadow-sm"
-        >
-          <div className="flex items-start">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Tab Content */}
-      <AnimatePresence mode="wait">
-        {activeTab === "translate" ? (
-          <motion.div
-            key="translate"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {/* Custom Instructions */}
-            <div className="mb-5">
-              <button
-                onClick={() =>
-                  setShowCustomInstructions(!showCustomInstructions)
-                }
-                className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-100 transition-colors duration-200"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-medium text-gray-700">
-                    Custom Instructions
-                  </div>
-                  {customInstructions && (
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  )}
+        <CardContent className="space-y-4">
+          {/* API Key Warning */}
+          {(!googleApiKey || !openaiApiKey) && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg"
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-800 dark:text-amber-200">
+                  Please configure your API keys in the settings.
+                  {!googleApiKey && " Google API key is required for translation."}
+                  {!openaiApiKey && " OpenAI API key is required for voice features."}
                 </div>
-                {showCustomInstructions ? (
-                  <ChevronUp size={16} className="text-gray-500" />
-                ) : (
-                  <ChevronDown size={16} className="text-gray-500" />
-                )}
-              </button>
+              </div>
+            </motion.div>
+          )}
 
-              <AnimatePresence>
-                {showCustomInstructions && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                      <label
-                        htmlFor="customInstructions"
-                        className="block text-sm font-medium text-gray-700 mb-2"
-                      >
-                        Additional context for translation
-                      </label>
-                      <textarea
-                        id="customInstructions"
-                        value={customInstructions}
-                        onChange={(e) => setCustomInstructions(e.target.value)}
-                        className="block w-full rounded-lg border px-3 py-2 border-blue-200 bg-white shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200 text-sm"
-                        rows={3}
-                        placeholder="e.g., 'This is a technical document about software development' or 'Translate in a formal tone' or 'Keep brand names untranslated'..."
-                      />
-                      <p className="text-xs text-gray-600 mt-2">
-                        💡 Provide context, tone preferences, or specific
-                        instructions to improve translation quality.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+          {/* Site Status */}
+          {currentSite && (
+            <Card className="p-3 bg-muted/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Info size={14} className="text-muted-foreground" />
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Current site: </span>
+                    <span className="font-medium">{currentSite}</span>
+                  </div>
+                </div>
 
-            {/* Input Text */}
-            <div className="mb-5">
-              <label
-                htmlFor="inputText"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {isSiteDisabled ? "Disabled" : "Enabled"}
+                  </span>
+                  <Switch
+                    checked={!isSiteDisabled}
+                    onCheckedChange={() => toggleSiteDisabled()}
+                  />
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Tabs */}
+          <div className="flex border-b">
+            {[
+              { id: "translate", label: "Translate", icon: Globe },
+              { id: "voice", label: "Voice", icon: Mic },
+              { id: "history", label: "History", icon: History },
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                className={`flex-1 px-3 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center justify-center gap-2 ${
+                  activeTab === id
+                    ? "text-primary border-b-2 border-primary bg-primary/5"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+                onClick={() => setActiveTab(id as any)}
               >
-                Text to translate
-              </label>
-              <textarea
-                id="inputText"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                className="block w-full rounded-lg border px-3 py-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors duration-200"
-                rows={6}
-                placeholder="Enter text to translate..."
+                <Icon size={14} />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Smart Translation Toggle */}
+          <Card className="p-3 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Smart Translation</div>
+                <div className="text-xs text-muted-foreground">
+                  Auto-detect and translate between {
+                    LANGUAGES.find(lang => lang.code === smartTranslationConfig.primaryLanguage)?.name || smartTranslationConfig.primaryLanguage
+                  } and {
+                    LANGUAGES.find(lang => lang.code === smartTranslationConfig.secondaryLanguage)?.name || smartTranslationConfig.secondaryLanguage
+                  }
+                </div>
+              </div>
+              <Switch
+                checked={smartTranslation}
+                onCheckedChange={setSmartTranslation}
               />
             </div>
+          </Card>
 
-            {/* Translate Button */}
-            <div className="mb-5">
+          {/* Language Selectors (only shown when smart translation is off) */}
+          {!smartTranslation && (
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Select value={sourceLanguage} onValueChange={setSourceLanguage}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Button
-                variant="primary"
-                size="md"
-                fullWidth
-                isLoading={isTranslating}
-                onClick={handleTranslate}
-                disabled={!googleApiKey || !inputText}
-                className="rounded-lg shadow-sm hover:shadow transition-all duration-200"
+                variant="ghost"
+                size="sm"
+                className="px-2"
+                onClick={() => {
+                  const temp = sourceLanguage;
+                  setSourceLanguage(targetLanguage);
+                  setTargetLanguage(temp);
+                }}
+                title="Switch languages"
               >
-                Translate
+                <ArrowLeftRight size={14} />
               </Button>
+
+              <div className="flex-1">
+                <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGES.filter((lang) => lang.code !== "auto").map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+          )}
 
-            {/* Translation Result */}
-            {translatedText && (
+          {/* Auto Translate Toggle */}
+          <Card className="p-3 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Automatic translation</div>
+                <div className="text-xs text-muted-foreground">Automatically translate selected text</div>
+              </div>
+              <Switch
+                checked={isAutoTranslate}
+                onCheckedChange={setIsAutoTranslate}
+              />
+            </div>
+          </Card>
+
+          {/* Error Message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg"
+            >
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Tab Content */}
+          <AnimatePresence mode="wait">
+            {activeTab === "translate" ? (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4"
+                key="translate"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Translation
-                  </label>
-
-                  <button
-                    onClick={copyToClipboard}
-                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
-                    title="Copy"
+                {/* Custom Instructions */}
+                <div>
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      setShowCustomInstructions(!showCustomInstructions)
+                    }
+                    className="w-full justify-between p-2 h-auto text-left hover:bg-accent"
                   >
-                    <Copy size={16} />
-                  </button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Custom Instructions</span>
+                      {customInstructions && (
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      )}
+                    </div>
+                    {showCustomInstructions ? (
+                      <ChevronUp size={14} />
+                    ) : (
+                      <ChevronDown size={14} />
+                    )}
+                  </Button>
+
+                  <AnimatePresence>
+                    {showCustomInstructions && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-2 p-3 bg-primary/5 rounded-lg border">
+                          <label
+                            htmlFor="customInstructions"
+                            className="block text-sm font-medium mb-2"
+                          >
+                            Additional context for translation
+                          </label>
+                          <Textarea
+                            id="customInstructions"
+                            value={customInstructions}
+                            onChange={(e) => setCustomInstructions(e.target.value)}
+                            className="text-sm resize-none"
+                            rows={3}
+                            placeholder="e.g., 'This is a technical document about software development' or 'Translate in a formal tone' or 'Keep brand names untranslated'..."
+                          />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            💡 Provide context, tone preferences, or specific instructions to improve translation quality.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-                  <p className="text-sm">{translatedText}</p>
+
+                {/* Input Text */}
+                <div>
+                  <label
+                    htmlFor="inputText"
+                    className="block text-sm font-medium mb-2"
+                  >
+                    Text to translate
+                  </label>
+                  <Textarea
+                    id="inputText"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    className="resize-none"
+                    rows={4}
+                    placeholder="Enter text to translate..."
+                  />
                 </div>
+
+                {/* Translate Button */}
+                <Button
+                  onClick={handleTranslate}
+                  disabled={!googleApiKey || !inputText || isTranslating}
+                  className="w-full"
+                >
+                  {isTranslating ? "Translating..." : "Translate"}
+                </Button>
+
+                {/* Translation Result */}
+                {translatedText && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium">
+                        Translation
+                      </label>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={copyToClipboard}
+                        className="h-6 px-2"
+                        title="Copy"
+                      >
+                        <Copy size={12} />
+                      </Button>
+                    </div>
+                    <Card className="p-3 bg-muted/50">
+                      <p className="text-sm">{translatedText}</p>
+                    </Card>
+                  </motion.div>
+                )}
+              </motion.div>
+            ) : activeTab === "voice" ? (
+              <motion.div
+                key="voice"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <VoiceRecording
+                  googleApiKey={googleApiKey}
+                  openaiApiKey={openaiApiKey}
+                  sourceLanguage={sourceLanguage}
+                  targetLanguage={targetLanguage}
+                  isAutoTranslate={isAutoTranslate}
+                  microphonePermission={microphonePermission}
+                  customInstructions={customInstructions}
+                  smartTranslation={smartTranslation}
+                  smartTranslationConfig={smartTranslationConfig}
+                  onError={setError}
+                  onInputTextChange={setInputText}
+                  onTranslatedTextChange={setTranslatedText}
+                  onHistoryUpdate={setHistory}
+                  inputText={inputText}
+                  translatedText={translatedText}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="history"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <HistoryTab
+                  history={history}
+                  onCopyText={handleCopyFromHistory}
+                  onDeleteHistoryItem={handleDeleteHistoryItem}
+                  onClearHistory={handleClearHistory}
+                />
               </motion.div>
             )}
-          </motion.div>
-        ) : activeTab === "voice" ? (
-          <motion.div
-            key="voice"
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2 }}
-          >
-            <VoiceRecording
-              googleApiKey={googleApiKey}
-              openaiApiKey={openaiApiKey}
-              sourceLanguage={sourceLanguage}
-              targetLanguage={targetLanguage}
-              isAutoTranslate={isAutoTranslate}
-              microphonePermission={microphonePermission}
-              customInstructions={customInstructions}
-              smartTranslation={smartTranslation}
-              smartTranslationConfig={smartTranslationConfig}
-              onError={setError}
-              onInputTextChange={setInputText}
-              onTranslatedTextChange={setTranslatedText}
-              onHistoryUpdate={setHistory}
-              inputText={inputText}
-              translatedText={translatedText}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="history"
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2 }}
-          >
-            <HistoryTab
-              history={history}
-              onCopyText={handleCopyFromHistory}
-              onDeleteHistoryItem={handleDeleteHistoryItem}
-              onClearHistory={handleClearHistory}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </AnimatePresence>
+        </CardContent>
+      </Card>
     </div>
+  );
+};
+
+const Popup: React.FC = () => {
+  return (
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <PopupContent />
+    </ThemeProvider>
   );
 };
 

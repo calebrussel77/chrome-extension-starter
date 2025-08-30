@@ -157,5 +157,6 @@ export const DEFAULT_CONFIG = {
   customInstructions: "",
   smartTranslation: true,
   smartTranslationConfig: DEFAULT_SMART_TRANSLATION_CONFIG,
+  theme: "system" as "light" | "dark" | "system",
   history: [],
 };

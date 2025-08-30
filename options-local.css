@@ -1,16 +1,40 @@
+/* Options-specific styling for development preview */
 .content {
+  max-width: 1200px;
   display: flex;
   margin: auto;
+  padding: 20px;
   flex-direction: column;
-  gap: 30px;
-  padding: 30px;
-  justify-content: space-between;
+  gap: 20px;
 }
 
 .content-text {
-  max-width: 1200px;
-  margin: auto;
   color: white;
-  font-size: large;
+  font-size: medium;
   font-weight: 500;
+  text-align: center;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+/* Create a full-width options container */
+.root {
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  width: 100%;
+  min-height: 600px;
+}
+
+/* Responsive design for options page */
+@media (max-width: 768px) {
+  .content {
+    padding: 10px;
+  }
+  
+  .root {
+    margin: 0 10px;
+  }
 }
