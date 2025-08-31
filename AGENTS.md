@@ -1,11 +1,11 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI agents when working with code in this repository.
 
 ## Project Overview
 
 AI Translator Pro is a monorepo containing:
-1. **Chrome Extension** (`apps/extension`) - AI-powered translation using OpenAI with text translation, voice-to-text capabilities, and site-specific controls
+1. **Chrome Extension** (`apps/extension`) - AI-powered translation using Google Gemini AI with text translation, voice-to-text capabilities, and site-specific controls
 2. **Web App** (`apps/web`) - Next.js landing page with waitlist signup for users interested in the extension
 3. **Shared Packages** (`packages/`) - Common utilities and UI components
 
@@ -104,8 +104,8 @@ The web app (`apps/web`) is built with Next.js and includes:
 - TypeScript compilation uses two configs: `tsconfig.app.json` for source, `tsconfig.node.json` for build tools
 
 ### API Integration
-- **Translation**: OpenAI (via `openai` SDK)
-  - Model: `gpt-4o-mini`
+- **Translation**: Google Gemini AI (via `@google/genai` SDK)
+  - Model: `gemini-2.5-flash-preview-05-20`
   - Supports auto-detection and 30+ languages
 - **Speech-to-Text**: OpenAI Whisper API (via `openai` SDK)
   - Model: `whisper-1`
@@ -113,7 +113,7 @@ The web app (`apps/web`) is built with Next.js and includes:
 
 ### Storage Architecture
 The extension uses Chrome Storage API (`apps/extension/src/services/storage.ts`) to manage:
-- User configuration (OpenAI API key, language preferences)
+- User configuration (API keys, language preferences)
 - Translation history
 - Site-specific enable/disable states
 - All data stored locally in Chrome's secure storage
@@ -149,4 +149,4 @@ The manifest declares these permissions:
 - Background script implements retry logic for message passing to handle timing issues
 - Translation requests show loading state before API response
 - Site-specific controls allow users to disable extension per domain
-- OpenAI API key stored securely in Chrome local storage, never transmitted except to OpenAI APIs
+- All API keys stored securely in Chrome local storage, never transmitted except to respective APIs

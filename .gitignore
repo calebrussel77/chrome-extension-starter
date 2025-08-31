@@ -26,3 +26,33 @@ dist-ssr
 .history
 
 .mcp.json
+
+# Build outputs
+/apps/extension/dist
+/apps/web/dist
+/apps/web/.next
+/apps/web/out
+/apps/web/.vercel
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# TypeScript build cache
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Cache directories
+.cache
+.parcel-cache
+.turbo
+
+# OS files
+Thumbs.db
+
+# Package manager lock files (if you want to ignore them)
+# package-lock.json
+# yarn.lock

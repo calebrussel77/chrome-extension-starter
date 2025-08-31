@@ -1,6 +1,20 @@
-# AI Translator Pro - Chrome Extension
+# AI Translator Pro
 
-AI Translator Pro is a powerful Chrome extension that uses Google Gemini AI to provide intelligent translation with configurable language pairs:
+A monorepo containing the AI Translator Pro Chrome extension and its companion web application.
+
+## 📦 What's Inside
+
+This monorepo includes the following packages and applications:
+
+- **apps/extension**: Chrome extension for AI-powered translation using OpenAI
+- **apps/web**: Next.js landing page with waitlist signup functionality
+- **packages/ui**: Shared UI components and utilities
+- **packages/eslint-config**: Shared ESLint configuration
+- **packages/typescript-config**: Shared TypeScript configuration
+
+## 🚀 Chrome Extension
+
+AI Translator Pro is a powerful Chrome extension that uses OpenAI to provide intelligent translation with configurable language pairs:
 
 - **Configurable Smart Translation**: Auto-detects language and translates between your preferred language pairs
 - **10 Pre-configured Language Pairs**: French, Spanish, German, Chinese, Japanese, Italian, Portuguese, Russian, Korean, Arabic ↔ American English
@@ -47,7 +61,7 @@ AI Translator Pro is a powerful Chrome extension that uses Google Gemini AI to p
 
 ## Installation
 
-### Development Setup
+### Monorepo Development Setup
 
 1. Clone the repository:
 ```bash
@@ -55,36 +69,100 @@ git clone https://github.com/yourusername/ai-translator-pro.git
 cd ai-translator-pro
 ```
 
-2. Install dependencies:
+2. Install dependencies for all packages:
+
 ```bash
 pnpm install
 ```
 
 3. Development mode:
+
 ```bash
+# Start the Chrome extension development server
 pnpm run dev
+
+# Start the web application development server  
+pnpm run dev:web
+
+# Build all applications
+pnpm run build:all
+
+# Run linting across all packages
+pnpm run lint
 ```
 
-4. Build the extension:
+4. Build individual applications:
+
 ```bash
+# Build extension only
 pnpm run build
+
+# Build web app only
+pnpm run build:web
 ```
 
 ### Loading the Extension in Chrome
 
-1. Build the extension using `pnpm run build` to generate the `dist` folder
+1. Build the extension using `pnpm run build` to generate the `apps/extension/dist` folder
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top-right corner
-4. Click "Load unpacked" and select the `dist` folder
+4. Click "Load unpacked" and select the `apps/extension/dist` folder
 5. The extension should now be installed and visible in your Chrome toolbar
+
+## 🌐 Web Application
+
+The companion web application (`apps/web`) is a Next.js landing page featuring:
+
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Animated UI**: Smooth animations using Framer Motion  
+- **Waitlist Signup**: Email collection for launch notifications
+- **Feature Showcase**: Highlights of extension capabilities
+
+### Local Development
+
+```bash
+# Start the web application development server
+pnpm run dev:web
+```
+
+The web app will be available at `http://localhost:3000`
+
+### Deployment
+
+The web application can be deployed to any platform that supports Next.js:
+
+- Vercel (recommended)
+- Netlify  
+- AWS Amplify
+- Docker
+
+## 📁 Project Structure
+
+```
+ai-translator-pro/
+├── apps/
+│   ├── extension/          # Chrome extension
+│   │   ├── src/           # Extension source code
+│   │   ├── dist/          # Built extension (after build)
+│   │   └── package.json   # Extension dependencies
+│   └── web/               # Next.js web app
+│       ├── src/           # Web app source code
+│       ├── .next/         # Next.js build output
+│       └── package.json   # Web app dependencies
+├── packages/
+│   ├── ui/                # Shared UI components
+│   ├── eslint-config/     # Shared ESLint config
+│   └── typescript-config/ # Shared TypeScript config
+├── pnpm-workspace.yaml    # pnpm workspace configuration
+└── package.json           # Root package configuration
+```
 
 ## Configuration
 
 ### Initial Setup
 1. Click on the extension icon in the Chrome toolbar
 2. For first-time use, click the settings icon to open options
-3. Enter your **Google Gemini API key** (required for translations)
-4. Enter your **OpenAI API key** (required for voice-to-text features)
+3. Enter your **OpenAI API key** (required for translations and voice-to-text features)
 
 ### Translation Modes
 - **Smart Translation** (Default): Automatically handles your configured language pair
@@ -158,33 +236,27 @@ pnpm run build
 
 ## API Keys
 
-This extension requires two API keys for full functionality:
+This extension requires an OpenAI API key for full functionality:
 
-### Google Gemini API Key (Required for Translation)
-1. Create an account at [Google AI Studio](https://aistudio.google.com/)
-2. Navigate to the API keys section
-3. Generate a new API key
-4. Enter the key in the extension options
-
-### OpenAI API Key (Required for Voice-to-Text)
+### OpenAI API Key (Required for Translation and Voice-to-Text)
 1. Create an account at [OpenAI Platform](https://platform.openai.com/)
 2. Navigate to the API keys section
 3. Generate a new API key  
 4. Enter the key in the extension options
 
-**Privacy Note**: Your API keys are stored locally in Chrome's secure storage and are never sent to any server other than Google's Gemini API and OpenAI endpoints respectively. The extension makes direct API calls to these services without any intermediary servers.
+**Privacy Note**: Your API key is stored locally in Chrome's secure storage and is never sent to any server other than OpenAI endpoints. The extension makes direct API calls to OpenAI services without any intermediary servers.
 
 ## Privacy
 
 - The extension only accesses the text you explicitly select on web pages
-- All translation happens via direct API calls to Google Gemini
-- Speech-to-text processing uses the browser's native Web Speech API
+- All translation happens via direct API calls to OpenAI
+- Speech-to-text processing uses OpenAI Whisper API
 - No data is stored on external servers
 - Your API key is stored securely in Chrome's local storage
 
 ## Troubleshooting
 
-- **Extension not working**: Check that you have entered a valid Google Gemini API key
+- **Extension not working**: Check that you have entered a valid OpenAI API key
 - **Translation errors**: Ensure your API key has sufficient quota and permissions
 - **Microphone not working**: Check your browser permissions for microphone access
 - **Speech recognition not working**: Ensure you're using a supported browser (Chrome, Edge, Safari)
@@ -194,12 +266,12 @@ This extension requires two API keys for full functionality:
 ### AI Models & Architecture
 
 #### Translation Engine
-- **Smart Translation**: Custom-tuned Google Gemini 2.5 Flash model
-  - Specialized for French ↔ American English translation
+- **Smart Translation**: OpenAI GPT-4o-mini model
+  - Configurable language pairs for intelligent translation
   - Enhanced with comprehensive slang and abbreviation knowledge
   - Contextual understanding of modern expressions (dude, btw, fire, no cap, etc.)
   - Cultural adaptation rather than literal translation
-- **Manual Translation**: Standard Gemini 2.5 Flash for 30+ language pairs
+- **Manual Translation**: OpenAI GPT-4o-mini for 30+ language pairs
 
 #### Speech Processing
 - **Speech-to-Text**: OpenAI Whisper API (whisper-1 model)
@@ -210,8 +282,7 @@ This extension requires two API keys for full functionality:
 ### Dependencies
 
 #### Core APIs
-- `@google/genai`: Official Google GenAI TypeScript SDK for translation
-- `openai`: OpenAI TypeScript SDK for speech-to-text functionality  
+- `openai`: OpenAI TypeScript SDK for translation and speech-to-text functionality  
 - Chrome Extensions API for browser integration
 
 #### UI Framework
@@ -258,8 +329,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Credits
 
-- **Google** for providing the Gemini AI API and advanced language models
-- **OpenAI** for Whisper speech-to-text technology  
+- **OpenAI** for providing GPT models and Whisper speech-to-text technology  
 - **Chrome Extensions API** for browser integration capabilities
 - **React, TypeScript, and Tailwind CSS** for the modern UI framework
 - **Framer Motion** for smooth animations and user experience
