@@ -198,7 +198,7 @@ export const smartTranslateText = async (
           content: `Text to translate:\n${text}`,
         },
       ],
-      temperature: 0.3, // Keep temperature low for more deterministic translation
+      temperature: 0.3, //Keep temperature low for more deterministic translation
       max_tokens: 2048,
     });
 
