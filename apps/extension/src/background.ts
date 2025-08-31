@@ -1,4 +1,4 @@
-import { translateText, smartTranslateText } from "./services/api";
+import { smartTranslateText, translateText } from "./services/api";
 import {
   addToHistory,
   getConfig,
@@ -52,7 +52,7 @@ const notifyContentScriptsConfigUpdated = async () => {
   try {
     const config = await getConfig();
     const tabs = await chrome.tabs.query({});
-    
+
     for (const tab of tabs) {
       if (tab.id && contentScriptTabs.has(tab.id)) {
         try {
@@ -62,12 +62,18 @@ const notifyContentScriptsConfigUpdated = async () => {
           });
         } catch (error) {
           // Content script might not be loaded, ignore error
-          console.error(`Could not notify tab ${tab.id} about config update:`, error);
+          console.error(
+            `Could not notify tab ${tab.id} about config update:`,
+            error
+          );
         }
       }
     }
   } catch (error) {
-    console.error("Error notifying content scripts about config update:", error);
+    console.error(
+      "Error notifying content scripts about config update:",
+      error
+    );
   }
 };
 
@@ -76,13 +82,13 @@ chrome.runtime.onInstalled.addListener(() => {
   // Create context menu items
   chrome.contextMenus.create({
     id: "translateSelection",
-    title: "Traduire la sélection",
+    title: "Translate selection",
     contexts: ["selection"],
   });
 
   chrome.contextMenus.create({
     id: "toggleSiteDisabled",
-    title: "Désactiver/Activer sur ce site",
+    title: "Disable/Enable on this site",
     contexts: ["all"],
   });
 });
@@ -145,8 +151,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             config.openaiApiKey,
             config.smartTranslationConfig || {
               primaryLanguage: "fr",
-              secondaryLanguage: "en", 
-              fallbackLanguage: "en"
+              secondaryLanguage: "en",
+              fallbackLanguage: "en",
             },
             config.customInstructions
           )
@@ -163,8 +169,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         type: "translation",
         originalText: info.selectionText,
         translatedText: result.translatedText ?? "",
-        sourceLanguage: config.smartTranslation ? "auto" : config.sourceLanguage,
-        targetLanguage: config.smartTranslation ? "auto" : config.targetLanguage,
+        sourceLanguage: config.smartTranslation
+          ? "auto"
+          : config.sourceLanguage,
+        targetLanguage: config.smartTranslation
+          ? "auto"
+          : config.targetLanguage,
       });
 
       // Send translation result to content script
@@ -268,7 +278,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } else if (message.type === MessageType.TRANSLATE_SELECTION) {
         const { text, sourceLanguage, targetLanguage } =
           message as TranslateSelectionMessage;
-        
+
         const config = await getConfig();
         const result = config.smartTranslation
           ? await smartTranslateText(
@@ -276,8 +286,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               config.openaiApiKey,
               config.smartTranslationConfig || {
                 primaryLanguage: "fr",
-                secondaryLanguage: "en", 
-                fallbackLanguage: "en"
+                secondaryLanguage: "en",
+                fallbackLanguage: "en",
               },
               config.customInstructions
             )

@@ -195,7 +195,8 @@ ai-translator-pro/
 3. Select text and it translates according to your language settings
 
 #### Alternative Methods
-- **Context Menu**: Right-click selected text → "Traduire la sélection"
+
+- **Context Menu**: Right-click selected text → "Translate selection"
 - **Copy & Paste**: Use the popup interface to translate typed text
 
 ### 🎙️ **Voice to Text**

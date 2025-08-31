@@ -26,7 +26,7 @@ export type ExtensionConfig = {
   customInstructions: string;
   smartTranslation: boolean;
   smartTranslationConfig: SmartTranslationConfig;
-  theme: "light" | "dark" | "system";
+  theme: "light" | "dark";
   history: HistoryItem[];
 };
 

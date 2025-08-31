@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import React, { useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
 import HistoryTab from "../../components/HistoryTab";
 import VoiceRecording from "../../components/VoiceRecording";
 import { LANGUAGES } from "../../languages";
@@ -42,7 +41,7 @@ import "../../dev-mock-chrome";
 
 const PopupContent: React.FC = () => {
   const { theme, setTheme } = useTheme();
-  
+
   // State
   const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [sourceLanguage, setSourceLanguage] = useState("auto");
@@ -55,11 +54,12 @@ const PopupContent: React.FC = () => {
   const [enableAnimations, setEnableAnimations] = useState(true);
   const [customInstructions, setCustomInstructions] = useState("");
   const [smartTranslation, setSmartTranslation] = useState(true);
-  const [smartTranslationConfig, setSmartTranslationConfig] = useState<SmartTranslationConfig>({
-    primaryLanguage: "fr",
-    secondaryLanguage: "en", 
-    fallbackLanguage: "en"
-  });
+  const [smartTranslationConfig, setSmartTranslationConfig] =
+    useState<SmartTranslationConfig>({
+      primaryLanguage: "fr",
+      secondaryLanguage: "en",
+      fallbackLanguage: "en",
+    });
   const [showCustomInstructions, setShowCustomInstructions] = useState(false);
   const [activeTab, setActiveTab] = useState<"translate" | "voice" | "history">(
     "translate"
@@ -83,11 +83,13 @@ const PopupContent: React.FC = () => {
         setEnableAnimations(config.enableAnimations);
         setCustomInstructions(config.customInstructions || "");
         setSmartTranslation(config.smartTranslation ?? true);
-        setSmartTranslationConfig(config.smartTranslationConfig || {
-          primaryLanguage: "fr",
-          secondaryLanguage: "en", 
-          fallbackLanguage: "en"
-        });
+        setSmartTranslationConfig(
+          config.smartTranslationConfig || {
+            primaryLanguage: "fr",
+            secondaryLanguage: "en",
+            fallbackLanguage: "en",
+          }
+        );
         setShowCustomInstructions(
           !!(config.customInstructions && config.customInstructions.trim())
         );
@@ -126,7 +128,7 @@ const PopupContent: React.FC = () => {
           customInstructions,
           smartTranslation,
           smartTranslationConfig,
-          theme: theme as "light" | "dark" | "system",
+          theme: theme as "light" | "dark",
         });
       } catch (err) {
         console.error("Error saving config:", err);
@@ -300,7 +302,7 @@ const PopupContent: React.FC = () => {
   };
 
   return (
-    <div className="w-[450px] min-h-[540px] bg-background text-foreground">
+    <div className="w-[450px] min-h-[640px] bg-background text-foreground">
       <Card className="h-full border-0 rounded-none shadow-none">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
@@ -339,7 +341,6 @@ const PopupContent: React.FC = () => {
                 <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-amber-800 dark:text-amber-200">
                   Please configure your OpenAI API key in the settings.
-                  OpenAI API key is required for translation and voice features.
                 </div>
               </div>
             </motion.div>
@@ -690,7 +691,5 @@ const Popup: React.FC = () => {
     </ThemeProvider>
   );
 };
-
-createRoot(document.getElementById("root")!).render(<Popup />);
 
 export default Popup;

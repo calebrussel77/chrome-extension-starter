@@ -20,7 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
+
 import { LANGUAGES, SMART_TRANSLATION_PRESETS } from "../../languages";
 import {
   getConfig,
@@ -35,7 +35,8 @@ import "../../chrome-extension/global.css";
 import "../../dev-mock-chrome";
 
 const OptionsContent = () => {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme: _setTheme } = useTheme(); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [themeLoaded, setThemeLoaded] = useState(false);
 
   // State
   const [openaiApiKey, setOpenaiApiKey] = useState("");
@@ -85,11 +86,6 @@ const OptionsContent = () => {
           }
         );
 
-        // Set theme from config
-        if (config.theme) {
-          setTheme(config.theme);
-        }
-
         // Find matching preset or set custom
         const matchingPreset = SMART_TRANSLATION_PRESETS.find(
           (preset) =>
@@ -118,21 +114,22 @@ const OptionsContent = () => {
 
     loadConfig();
     checkMicrophonePermission();
-  }, [setTheme]);
+  }, []);
 
-  // Save theme when it changes (debounced)
+  // Mark theme as loaded when available
   useEffect(() => {
-    if (!theme) return;
+    if (theme) {
+      setThemeLoaded(true);
+    }
+  }, [theme]);
 
-    const timeoutId = setTimeout(async () => {
-      try {
-        await updateConfig({ theme: theme as "light" | "dark" | "system" });
-      } catch (err) {
+  // Sync theme changes with Chrome storage
+  useEffect(() => {
+    if (theme && theme !== "system") {
+      updateConfig({ theme: theme as "light" | "dark" }).catch((err) => {
         console.error("Error saving theme:", err);
-      }
-    }, 150);
-
-    return () => clearTimeout(timeoutId);
+      });
+    }
   }, [theme]);
 
   // Check microphone permission
@@ -285,7 +282,7 @@ const OptionsContent = () => {
         smartTranslation,
         smartTranslationConfig,
         disabledSites,
-        theme: theme as "light" | "dark" | "system",
+        theme: (theme as "light" | "dark") || "light",
       });
 
       setSaveSuccess(true);
@@ -415,7 +412,7 @@ const OptionsContent = () => {
               </p>
             </div>
           </div>
-          <ThemeToggleWithLabel />
+          {themeLoaded && <ThemeToggleWithLabel />}
         </div>
       </header>
 
@@ -869,7 +866,5 @@ const Options = () => {
     </ThemeProvider>
   );
 };
-
-createRoot(document.getElementById("root")!).render(<Options />);
 
 export default Options;

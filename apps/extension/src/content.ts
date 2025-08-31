@@ -10,11 +10,11 @@ let isExtensionDisabled = false;
 let selectedText = "";
 let translationPopup: HTMLDivElement | null = null;
 let config: ExtensionConfig | null = null; // Store the config
-let currentTheme: "light" | "dark" | "system" = "system";
+let currentTheme: "light" | "dark" = "light";
 
 // Function to get the effective theme (resolves "system" to actual theme)
 const getEffectiveTheme = (): "light" | "dark" => {
-  if (currentTheme === "system") {
+  if (currentTheme === "dark") {
     return window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light";
