@@ -7,7 +7,8 @@
       "Bash(pnpm run:*)",
       "Bash(grep:*)",
       "Bash(pnpm --filter extension build)",
-      "Bash(pnpm --filter extension lint)"
+      "Bash(pnpm --filter extension lint)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

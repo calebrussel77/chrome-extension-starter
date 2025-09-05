@@ -59,7 +59,7 @@ export const translateText = async (
     }
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4.1-nano-2025-04-14", // Using Gpt-4.1-nano-2025-04-14 for fast and cost-effective translation
+      model: "gpt-4.1-mini-2025-04-14", // Using Gpt-4.1-mini-2025-04-14 for fast and cost-effective translation
       messages: [
         {
           role: "system",
@@ -70,7 +70,7 @@ export const translateText = async (
           content: `Text to translate:\n${text}`,
         },
       ],
-      temperature: 0.3, // Keep temperature low for more deterministic translation
+      temperature: 0.6, // Keep temperature low for more deterministic translation
       max_tokens: 2048,
     });
 
@@ -137,9 +137,15 @@ export const smartTranslateText = async (
     });
 
     // Get language names for the prompt
-    const primaryLang = LANGUAGES.find(lang => lang.code === smartConfig.primaryLanguage)?.name || smartConfig.primaryLanguage;
-    const secondaryLang = LANGUAGES.find(lang => lang.code === smartConfig.secondaryLanguage)?.name || smartConfig.secondaryLanguage;
-    const fallbackLang = LANGUAGES.find(lang => lang.code === smartConfig.fallbackLanguage)?.name || smartConfig.fallbackLanguage;
+    const primaryLang =
+      LANGUAGES.find((lang) => lang.code === smartConfig.primaryLanguage)
+        ?.name || smartConfig.primaryLanguage;
+    const secondaryLang =
+      LANGUAGES.find((lang) => lang.code === smartConfig.secondaryLanguage)
+        ?.name || smartConfig.secondaryLanguage;
+    const fallbackLang =
+      LANGUAGES.find((lang) => lang.code === smartConfig.fallbackLanguage)
+        ?.name || smartConfig.fallbackLanguage;
 
     // Smart translation system prompt
     let systemPrompt = dedent`
@@ -151,7 +157,11 @@ export const smartTranslateText = async (
     3. If the text is in ${secondaryLang}, translate it to ${primaryLang}
     4. If the text is in neither ${primaryLang} nor ${secondaryLang}, translate it to ${fallbackLang}
     
-    ${smartConfig.primaryLanguage === 'en' || smartConfig.secondaryLanguage === 'en' || smartConfig.fallbackLanguage === 'en' ? `
+    ${
+      smartConfig.primaryLanguage === "en" ||
+      smartConfig.secondaryLanguage === "en" ||
+      smartConfig.fallbackLanguage === "en"
+        ? `
     CRITICAL - American Expressions & Abbreviations Knowledge:
     You must properly understand and translate common American expressions, slang, and abbreviations including but not limited to:
     
@@ -160,7 +170,9 @@ export const smartTranslateText = async (
     Slang terms: dude, bro, man, guys (when addressing people), cool, awesome, sick (meaning good), fire (excellent), lit (amazing), salty (upset), flex (show off), vibe/vibes, squad, fam, bestie, sus (suspicious), cap/no cap (lie/truth), periodt, slay, stan, ghost/ghosting, simp, karen, based, cringe, chad, boomer, zoomer, millennial, gen z, mood, bet (yes/agreed), facts, lowkey/highkey, deadass, fr/for real, no shot, mid (mediocre), bussin (excellent), slaps (sounds good), hits different, rent free, living for it, that's on me, my bad, catch these hands, spill the tea, throwing shade, coming for someone, pressed, triggered, woke, canceled, problematic, valid, chief (as in "this ain't it chief"), it's giving (it seems like), purr, and period/periodT
     
     Contextual expressions: "I'm dead" (very funny), "that's fire" (that's great), "no cap" (no lie), "it hits different" (it's uniquely good), "that's sus" (suspicious), "living rent free in my head" (can't stop thinking about it), "spill the tea" (tell me the gossip), "throwing shade" (subtle insult), "that's a vibe" (good feeling), "sending me" (making me laugh), "I can't even" (overwhelmed), "this slaps" (this is great), "lowkey/highkey" (somewhat/definitely), "periodt" (end of discussion), "we stan" (we support), "it's giving..." (it seems like/reminds me of)
-    ` : ''}
+    `
+        : ""
+    }
     
     Important translation guidelines:
     - The current time is ${new Date().toLocaleString()} (${
@@ -187,7 +199,7 @@ export const smartTranslateText = async (
     }
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4.1-nano-2025-04-14", // Using Gpt-4.1-nano-2025-04-14 for fast and cost-effective translation
+      model: "gpt-4.1-mini-2025-04-14", // Using Gpt-4.1-mini-2025-04-14 for fast and cost-effective translation
       messages: [
         {
           role: "system",
@@ -198,7 +210,7 @@ export const smartTranslateText = async (
           content: `Text to translate:\n${text}`,
         },
       ],
-      temperature: 0.3, //Keep temperature low for more deterministic translation
+      temperature: 0.6, //Keep temperature low for more deterministic translation
       max_tokens: 2048,
     });
 

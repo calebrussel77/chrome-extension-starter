@@ -90,7 +90,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
   return (
     <div>
       {history.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -112,7 +112,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
           <div className="flex justify-end mb-2">
             <button
               onClick={onClearHistory}
-              className="text-xs text-red-600 hover:text-red-800 flex items-center"
+              className="text-xs text-destructive hover:text-destructive/80 flex items-center"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -136,16 +136,16 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
             {Object.entries(groupedHistory).map(([date, items]) => (
               <div
                 key={date}
-                className="border border-gray-200 rounded-md overflow-hidden"
+                className="border border rounded-md overflow-hidden"
               >
-                <div className="bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700">
+                <div className="bg-muted/50 px-3 py-2 text-sm font-medium text-foreground">
                   {date}
                 </div>
                 <div>
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="border-t border-gray-200 px-3 py-2 hover:bg-gray-50"
+                      className="border-t border px-3 py-2 hover:bg-accent"
                     >
                       <div
                         className="flex items-center justify-between cursor-pointer"
@@ -162,7 +162,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
                           </span>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground">
                             {formatTime(item.timestamp)}
                           </span>
                           <svg
@@ -192,30 +192,30 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="mt-2 pt-2 border-t border-gray-100"
+                          className="mt-2 pt-2 border-t border"
                         >
-                          <div className="text-xs text-gray-500 mb-1">
+                          <div className="text-xs text-muted-foreground mb-1">
                             {item.type === "translation"
                               ? `Translated from ${item.sourceLanguage} to ${item.targetLanguage}`
                               : "Transcription"}
                           </div>
 
                           <div className="mb-2">
-                            <div className="text-xs font-medium text-gray-700 mb-1">
+                            <div className="text-xs font-medium text-foreground mb-1">
                               Original text:
                             </div>
-                            <div className="p-2 bg-gray-50 rounded text-sm border border-gray-200">
+                            <div className="p-2 bg-muted/50 rounded text-sm border border">
                               {item.originalText}
                             </div>
                           </div>
 
                           <div className="mb-2">
-                            <div className="text-xs font-medium text-gray-700 mb-1">
+                            <div className="text-xs font-medium text-foreground mb-1">
                               {item.type === "translation"
                                 ? "Translation:"
                                 : "Transcribed text:"}
                             </div>
-                            <div className="p-2 bg-gray-50 rounded text-sm border border-gray-200">
+                            <div className="p-2 bg-muted/50 rounded text-sm border border">
                               {item.translatedText}
                             </div>
                           </div>
@@ -223,7 +223,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
                           <div className="flex justify-end space-x-2">
                             <button
                               onClick={() => onCopyText(item.translatedText)}
-                              className="text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                              className="text-xs text-primary hover:text-primary/80 flex items-center"
                               title="Copy"
                             >
                               <svg
@@ -244,7 +244,7 @@ const HistoryTab: React.FC<HistoryTabProps> = ({
                             </button>
                             <button
                               onClick={() => onDeleteHistoryItem(item.id)}
-                              className="text-xs text-red-600 hover:text-red-800 flex items-center"
+                              className="text-xs text-destructive hover:text-destructive/80 flex items-center"
                               title="Delete"
                             >
                               <svg

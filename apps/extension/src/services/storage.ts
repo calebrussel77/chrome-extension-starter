@@ -7,13 +7,18 @@ import { ExtensionConfig, HistoryItem } from "../types";
  */
 export const getConfig = async (): Promise<ExtensionConfig> => {
   return new Promise((resolve) => {
+    // Get main config from sync storage (without history)
     chrome.storage.sync.get(["extensionConfig"], (result) => {
       const config = result.extensionConfig ?? {
         ...DEFAULT_CONFIG,
         history: [],
       };
-      if (!config.history) config.history = [];
-      resolve(config);
+      
+      // Get history separately from local storage
+      getHistory().then((history) => {
+        config.history = history;
+        resolve(config);
+      });
     });
   });
 };
@@ -26,18 +31,90 @@ export const getConfig = async (): Promise<ExtensionConfig> => {
 export const updateConfig = async (
   config: Partial<ExtensionConfig>
 ): Promise<void> => {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(["extensionConfig"], (result) => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get(["extensionConfig"], async (result) => {
       const currentConfig = result.extensionConfig ?? {
         ...DEFAULT_CONFIG,
         history: [],
       };
-      if (!currentConfig.history) currentConfig.history = [];
-      const newConfig = { ...currentConfig, ...config };
 
-      chrome.storage.sync.set({ extensionConfig: newConfig }, () => {
+      // Separate history from other config updates
+      const { history, ...configWithoutHistory } = config;
+      const newConfig = { ...currentConfig, ...configWithoutHistory };
+      
+      // Remove history from sync storage to save space
+      delete newConfig.history;
+
+      try {
+        // Update main config in sync storage
+        await new Promise<void>((resolveSync, rejectSync) => {
+          chrome.storage.sync.set({ extensionConfig: newConfig }, () => {
+            if (chrome.runtime.lastError) {
+              rejectSync(new Error(chrome.runtime.lastError.message));
+            } else {
+              resolveSync();
+            }
+          });
+        });
+
+        // Update history separately if provided
+        if (history !== undefined) {
+          await saveHistoryToLocal(history);
+        }
+
         resolve();
-      });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+};
+
+/**
+ * Saves history directly to local storage
+ * @param history The history array to save
+ * @returns A promise that resolves when the history is saved
+ */
+const saveHistoryToLocal = async (history: HistoryItem[]): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set({ extensionHistory: history }, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve();
+      }
+    });
+  });
+};
+
+/**
+ * Migrates history from sync storage to local storage (for backward compatibility)
+ * @returns A promise that resolves when migration is complete
+ */
+const migrateHistoryFromSync = async (): Promise<void> => {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(["extensionConfig"], async (result) => {
+      const config = result.extensionConfig;
+      
+      // If there's history in sync storage, migrate it to local storage
+      if (config && config.history && config.history.length > 0) {
+        try {
+          await saveHistoryToLocal(config.history);
+          
+          // Remove history from sync storage to free up space
+          const configWithoutHistory = { ...config };
+          delete configWithoutHistory.history;
+          
+          await new Promise<void>((resolveSync) => {
+            chrome.storage.sync.set({ extensionConfig: configWithoutHistory }, () => {
+              resolveSync();
+            });
+          });
+        } catch (error) {
+          console.warn('Failed to migrate history:', error);
+        }
+      }
+      resolve();
     });
   });
 };
@@ -50,19 +127,29 @@ export const updateConfig = async (
 export const addToHistory = async (
   item: Omit<HistoryItem, "id" | "timestamp">
 ): Promise<void> => {
-  const config = await getConfig();
-  const history = config.history || [];
+  try {
+    const history = await getHistory();
 
-  const newItem: HistoryItem = {
-    ...item,
-    id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    timestamp: Date.now(),
-  };
+    const newItem: HistoryItem = {
+      ...item,
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      timestamp: Date.now(),
+    };
 
-  // Limit history to 100 items to avoid storage issues
-  const newHistory = [newItem, ...history].slice(0, 100);
+    // Add new item to the beginning of the history array
+    // Removed the arbitrary 100-item limit to allow unlimited history
+    const newHistory = [newItem, ...history];
 
-  await updateConfig({ history: newHistory });
+    await saveHistoryToLocal(newHistory);
+    
+    // Optional cleanup for extremely large histories (runs in background)
+    cleanupHistoryIfNeeded().catch(err => 
+      console.warn('History cleanup failed:', err)
+    );
+  } catch (error) {
+    console.error('Failed to add item to history:', error);
+    throw error;
+  }
 };
 
 /**
@@ -70,8 +157,22 @@ export const addToHistory = async (
  * @returns A promise that resolves to the history items
  */
 export const getHistory = async (): Promise<HistoryItem[]> => {
-  const config = await getConfig();
-  return config.history || [];
+  return new Promise((resolve) => {
+    // First try to get history from local storage
+    chrome.storage.local.get(["extensionHistory"], (result) => {
+      if (result.extensionHistory && Array.isArray(result.extensionHistory)) {
+        resolve(result.extensionHistory);
+      } else {
+        // If no history in local storage, check if we need to migrate from sync storage
+        migrateHistoryFromSync().then(() => {
+          // Try again after migration
+          chrome.storage.local.get(["extensionHistory"], (result) => {
+            resolve(result.extensionHistory || []);
+          });
+        });
+      }
+    });
+  });
 };
 
 /**
@@ -79,7 +180,7 @@ export const getHistory = async (): Promise<HistoryItem[]> => {
  * @returns A promise that resolves when the history is cleared
  */
 export const clearHistory = async (): Promise<void> => {
-  await updateConfig({ history: [] });
+  await saveHistoryToLocal([]);
 };
 
 /**
@@ -88,12 +189,9 @@ export const clearHistory = async (): Promise<void> => {
  * @returns A promise that resolves when the item is deleted
  */
 export const deleteHistoryItem = async (id: string): Promise<void> => {
-  const config = await getConfig();
-  const history = config.history || [];
-
+  const history = await getHistory();
   const newHistory = history.filter((item) => item.id !== id);
-
-  await updateConfig({ history: newHistory });
+  await saveHistoryToLocal(newHistory);
 };
 
 /**
@@ -140,4 +238,33 @@ export const setMicrophonePermission = async (
 export const getMicrophonePermission = async (): Promise<boolean> => {
   const result = await chrome.storage.local.get(["microphonePermission"]);
   return result.microphonePermission === true;
+};
+
+/**
+ * Gets history storage statistics
+ * @returns A promise that resolves to storage statistics
+ */
+export const getHistoryStats = async (): Promise<{ count: number; sizeBytes: number }> => {
+  const history = await getHistory();
+  const historyJson = JSON.stringify(history);
+  return {
+    count: history.length,
+    sizeBytes: new Blob([historyJson]).size
+  };
+};
+
+/**
+ * Adds cleanup for very large history (optional safety measure)
+ * Only keeps the most recent 10,000 items if history grows too large
+ * @returns A promise that resolves when cleanup is complete
+ */
+export const cleanupHistoryIfNeeded = async (): Promise<void> => {
+  const MAX_HISTORY_ITEMS = 10000; // Reasonable limit to prevent excessive memory usage
+  const history = await getHistory();
+  
+  if (history.length > MAX_HISTORY_ITEMS) {
+    const trimmedHistory = history.slice(0, MAX_HISTORY_ITEMS);
+    await saveHistoryToLocal(trimmedHistory);
+    console.info(`History cleanup: trimmed from ${history.length} to ${MAX_HISTORY_ITEMS} items`);
+  }
 };
